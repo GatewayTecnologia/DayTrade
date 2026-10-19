@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Negociação - Relatório de Performance</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0f172a',
+                        cardBg: '#1e293b',
+                        borderCol: '#334155',
+                        accentGreen: '#10b981',
+                        accentRed: '#f43f5e',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (XLSX Parser) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-darkBg text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-cardBg border-b border-borderCol py-4 px-6 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20 text-emerald-400">
+                    <i class="fa-solid fa-chart-line text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white">Gateway Tecnologia</h1>
+                    <p class="text-xs text-slate-400">Análise Avançada de Relatórios de Histórico (MT5 / Relatórios)</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 flex-wrap">
+                <!-- Seletor Rápido de Relatórios da Pasta Configurada -->
+                <div id="fileSelectorContainer" class="hidden items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-slate-300">
+                    <i class="fa-solid fa-file-lines text-emerald-400"></i>
+                    <select id="folderFileSelect" class="bg-slate-900 text-slate-200 border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:border-emerald-500">
+                        <option value="">Selecione um relatório...</option>
+                    </select>
+                </div>
+                <!-- Carimbo de Data e Hora da Geração do Relatório extraído do arquivo -->
+                <div id="reportTimestamp" class="hidden text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 items-center gap-2">
+                    <i class="fa-solid fa-clock text-emerald-400"></i>
+                    <span id="reportTimeDisplay">Relatório gerado em: --/--/---- --:--:--</span>
+                </div>
+                <!-- Info da Pasta Configurada -->
+                <div id="fileInfo" class="hidden text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 flex items-center gap-2">
+                    <i class="fa-solid fa-folder-open text-emerald-400"></i>
+                    <span id="fileNameDisplay">Nenhuma pasta configurada</span>
+                </div>
+                <!-- Botão para Alterar Pasta -->
+                <button id="changeFolderBtn" class="hidden text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 items-center gap-2 transition cursor-pointer">
+                    <i class="fa-solid fa-rotate text-emerald-400"></i> Alterar Pasta
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+        <!-- Folder Configuration Section -->
+        <section id="uploadSection" class="bg-cardBg border border-borderCol rounded-2xl p-8 text-center shadow-lg transition hover:border-emerald-500/50">
+            <div class="max-w-md mx-auto space-y-4">
+                <div class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto text-emerald-400 text-2xl">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-semibold text-white">Configurar Pasta de Relatórios</h2>
+                    <p class="text-xs text-slate-400 mt-1">Selecione a pasta onde os relatórios do MetaTrader são salvos. O sistema detectará e carregará automaticamente o relatório mais recente.</p>
+                </div>
+                <label class="inline-block bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl cursor-pointer shadow-lg shadow-emerald-900/30 transition">
+                    Selecionar Pasta de Relatórios
+                    <input type="file" id="reportFolder" webkitdirectory directory class="hidden">
+                </label>
+            </div>
+        </section>
+
+        <!-- Dashboard Content -->
+        <div id="dashboardContent" class="hidden space-y-6">
+
+            <!-- KPI Summary Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md">
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Lucro Líquido Total</p>
+                    <p id="kpiNetProfit" class="text-2xl font-bold mt-2 text-white">R$ 0,00</p>
+                    <div class="mt-2 flex items-center text-xs text-slate-400">
+                        <span id="kpiProfitFactor" class="text-emerald-400 font-semibold mr-1">Fator: 0.0</span> | Soma das operações
+                    </div>
+                </div>
+                <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md">
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Total de Operações</p>
+                    <p id="kpiTotalTrades" class="text-2xl font-bold mt-2 text-white">0</p>
+                    <div class="mt-2 text-xs text-slate-400">
+                        <span id="kpiWinCount" class="text-emerald-400 font-medium">0 Acertos</span> / 
+                        <span id="kpiLossCount" class="text-rose-400 font-medium">0 Erros</span>
+                    </div>
+                </div>
+                <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md">
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Taxa de Acerto (Win Rate)</p>
+                    <p id="kpiWinRate" class="text-2xl font-bold mt-2 text-white">0.0%</p>
+                    <div class="mt-2 text-xs text-slate-400">
+                        Baseado no histórico de posições
+                    </div>
+                </div>
+                <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md">
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Maior Operação</p>
+                    <p id="kpiMaxProfit" class="text-2xl font-bold mt-2 text-emerald-400">R$ 0,00</p>
+                    <div class="mt-2 text-xs text-slate-400">
+                        Pior: <span id="kpiMaxLoss" class="text-rose-400 font-medium">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Equity Curve Chart -->
+                <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md lg:col-span-2 flex flex-col">
+                    <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-area text-emerald-400"></i> Curva de Patrimônio / Lucro Acumulado
+                    </h3>
+                    <div class="relative flex-grow h-72">
+                        <canvas id="equityChart"></canvas>
+                    </div>
+                </div>
+                <!-- Win/Loss Distribution -->
+                <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md flex flex-col">
+                    <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-pie-chart text-emerald-400"></i> Eficiência (Wins vs Losses)
+                    </h3>
+                    <div class="relative flex-grow h-72 flex items-center justify-center">
+                        <canvas id="winLossChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions Table with Granular Column Filters -->
+            <div class="bg-cardBg border border-borderCol rounded-xl shadow-md overflow-hidden">
+                <div class="p-5 border-b border-borderCol flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-table-list text-emerald-400"></i> Histórico Detalhado de Operações
+                        </h3>
+                        <button id="clearFilters" class="text-xs text-slate-400 hover:text-emerald-400 transition underline cursor-pointer">Limpar Filtros</button>
+                    </div>
+                    
+                    <!-- Advanced Filters Grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 pt-2 border-t border-slate-800">
+                        <div>
+                            <label class="block text-[10px] text-slate-400 uppercase font-medium mb-1">Data</label>
+                            <input type="text" id="filterDate" placeholder="Filtrar data..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 uppercase font-medium mb-1">Hora</label>
+                            <input type="text" id="filterTime" placeholder="Filtrar hora..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 uppercase font-medium mb-1">Tipo</label>
+                            <input type="text" id="filterType" placeholder="Filtrar tipo..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 uppercase font-medium mb-1">Ativo</label>
+                            <input type="text" id="filterAsset" placeholder="Filtrar ativo..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 uppercase font-medium mb-1">Volume</label>
+                            <input type="text" id="filterVolume" placeholder="Volume..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 uppercase font-medium mb-1">Preço</label>
+                            <input type="text" id="filterPrice" placeholder="Preço..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 uppercase font-medium mb-1">Lucro (R$)</label>
+                            <input type="text" id="filterProfit" placeholder="Lucro..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto max-h-96">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900/80 text-slate-400 sticky top-0 uppercase tracking-wider font-semibold border-b border-borderCol">
+                            <tr>
+                                <th class="py-3 px-4">Ticket / ID</th>
+                                <th class="py-3 px-4">Data / Hora</th>
+                                <th class="py-3 px-4">Tipo</th>
+                                <th class="py-3 px-4">Ativo</th>
+                                <th class="py-3 px-4">Volume</th>
+                                <th class="py-3 px-4 text-right">Preço</th>
+                                <th class="py-3 px-4 text-right">Lucro (R$)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tradeTableBody" class="divide-y divide-slate-800">
+                            <!-- Injetado via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-cardBg border-t border-borderCol py-4 text-center text-xs text-slate-500 mt-auto">
+        Gateway Tecnologia &copy; 2026 - Análise Automatizada de Relatórios
+    </footer>
+
+    <!-- Script Robusto de Parsing com Seleção de Pasta e Auto-Carregamento -->
+    <script>
+        let equityChartInstance = null;
+        let winLossChartInstance = null;
+        let allTrades = [];
+        let reportGeneratedTime = '';
+        let folderFilesMap = new Map();
+
+        const folderInput = document.getElementById('reportFolder');
+        const uploadSection = document.getElementById('uploadSection');
+        const dashboardContent = document.getElementById('dashboardContent');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const fileSelectorContainer = document.getElementById('fileSelectorContainer');
+        const folderFileSelect = document.getElementById('folderFileSelect');
+        const changeFolderBtn = document.getElementById('changeFolderBtn');
+        
+        const filterDate = document.getElementById('filterDate');
+        const filterTime = document.getElementById('filterTime');
+        const filterType = document.getElementById('filterType');
+        const filterAsset = document.getElementById('filterAsset');
+        const filterVolume = document.getElementById('filterVolume');
+        const filterPrice = document.getElementById('filterPrice');
+        const filterProfit = document.getElementById('filterProfit');
+        const clearFiltersBtn = document.getElementById('clearFilters');
+
+        folderInput.addEventListener('change', handleFolderSelect);
+        changeFolderBtn.addEventListener('click', resetFolderSelection);
+        folderFileSelect.addEventListener('change', (e) => {
+            const selectedKey = e.target.value;
+            if (folderFilesMap.has(selectedKey)) {
+                processFile(folderFilesMap.get(selectedKey));
+            }
+        });
+
+        function resetFolderSelection() {
+            dashboardContent.classList.add('hidden');
+            uploadSection.classList.remove('hidden');
+            fileInfo.classList.add('hidden');
+            fileSelectorContainer.classList.add('hidden');
+            changeFolderBtn.classList.add('hidden');
+            document.getElementById('reportTimestamp').classList.add('hidden');
+            folderInput.value = '';
+            folderFilesMap.clear();
+            folderFileSelect.innerHTML = '<option value="">Selecione um relatório...</option>';
+        }
+
+        function handleFolderSelect(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            const validExtensions = ['.xlsx', '.xls', '.xml', '.csv'];
+            const reportFiles = files.filter(file => {
+                const lowerName = file.name.toLowerCase();
+                return validExtensions.some(ext => lowerName.endsWith(ext));
+            });
+
+            if (reportFiles.length === 0) {
+                alert('Nenhum arquivo de relatório compatível (.xlsx, .xls, .xml, .csv) encontrado na pasta selecionada.');
+                return;
+            }
+
+            // Ordenar por data de modificação (mais recente primeiro)
+            reportFiles.sort((a, b) => (b.lastModified || 0) - (a.lastModified || 0));
+
+            folderFilesMap.clear();
+            folderFileSelect.innerHTML = '';
+
+            reportFiles.forEach(file => {
+                const key = file.webkitRelativePath || file.name;
+                folderFilesMap.set(key, file);
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = file.name;
+                folderFileSelect.appendChild(opt);
+            });
+
+            const firstPathParts = (reportFiles[0].webkitRelativePath || '').split('/');
+            const folderName = firstPathParts.length > 1 ? firstPathParts[0] : 'Pasta Configurada';
+
+            fileNameDisplay.textContent = `Pasta: ${folderName} (${reportFiles.length} relatórios)`;
+            fileInfo.classList.remove('hidden');
+            fileSelectorContainer.classList.remove('hidden');
+            fileSelectorContainer.classList.add('flex');
+            changeFolderBtn.classList.remove('hidden');
+            changeFolderBtn.classList.add('flex');
+
+            // Carrega automaticamente o arquivo mais recente
+            const latestKey = reportFiles[0].webkitRelativePath || reportFiles[0].name;
+            folderFileSelect.value = latestKey;
+            processFile(reportFiles[0]);
+        }
+
+        function processFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const data = new Uint8Array(event.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    parseMetaTraderReport(jsonRows, file);
+                } catch (err) {
+                    alert('Erro ao processar o arquivo: ' + file.name);
+                    console.error(err);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function parseMetaTraderReport(rows, file) {
+            allTrades = [];
+            let inPositionsSection = false;
+            reportGeneratedTime = '';
+
+            for (let i = 0; i < Math.min(rows.length, 15); i++) {
+                const row = rows[i];
+                if (!row || row.length === 0) continue;
+                const rowStr = row.map(c => String(c).trim()).join(' ');
+
+                if (rowStr.toLowerCase().includes('gerado') || rowStr.toLowerCase().includes('data') || rowStr.toLowerCase().includes('date') || rowStr.toLowerCase().includes('relatório') || /\d{4}[./-]\d{2}[./-]\d{2}/.test(rowStr)) {
+                    for (let cell of row) {
+                        let cellStr = String(cell).trim();
+                        if (/\d{4}[./-]\d{2}[./-]\d{2}/.test(cellStr)) {
+                            reportGeneratedTime = cellStr;
+                            break;
+                        }
+                    }
+                    if (!reportGeneratedTime && /\d{4}[./-]\d{2}[./-]\d{2}/.test(rowStr)) {
+                        reportGeneratedTime = rowStr;
+                        break;
+                    }
+                }
+            }
+
+            if (!reportGeneratedTime) {
+                const modDate = file && file.lastModified ? new Date(file.lastModified) : new Date();
+                reportGeneratedTime = modDate.toLocaleString('pt-BR');
+            }
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || row.length === 0) continue;
+                
+                const rowStr = row.map(c => String(c).trim()).join(' ');
+
+                if (rowStr.toLowerCase().includes('posições') || (rowStr.includes('Position') && rowStr.includes('Ativo'))) {
+                    inPositionsSection = true;
+                    continue;
+                }
+
+                if (inPositionsSection && (rowStr.toLowerCase().includes('ordens') || rowStr.toLowerCase().includes('transações') || rowStr.toLowerCase().includes('posições abertas'))) {
+                    inPositionsSection = false;
+                }
+
+                if (inPositionsSection && row.length >= 6) {
+                    let timeCol = String(row[0] || '');
+                    if (timeCol.includes('2026.') || timeCol.includes('2025.') || timeCol.includes('.')) {
+                        let ticket = row[1] || `TKT-${i}`;
+                        let asset = row[2] || 'WINFUT';
+                        let type = row[3] || 'BUY';
+                        let volume = String(row[4] || '1');
+                        let price = String(row[5] || '0');
+                        
+                        let profitVal = NaN;
+                        for (let c = row.length - 1; c >= 6; c--) {
+                            let val = parseFloat(row[c]);
+                            if (!isNaN(val)) {
+                                profitVal = val;
+                                break;
+                            }
+                        }
+                        if (isNaN(profitVal) && row.length >= 13) {
+                            profitVal = parseFloat(row[12]) || 0;
+                        }
+
+                        if (!isNaN(profitVal)) {
+                            let parts = timeCol.split(' ');
+                            allTrades.push({
+                                ticket: ticket,
+                                dateTime: timeCol,
+                                date: parts[0] || '',
+                                time: parts[1] || '',
+                                type: type,
+                                symbol: asset,
+                                volume: volume,
+                                price: price,
+                                profit: profitVal
+                            });
+                        }
+                    }
+                }
+            }
+
+            if (allTrades.length === 0) {
+                rows.forEach((row, idx) => {
+                    let rowStr = row.map(c => String(c)).join(' ');
+                    if (rowStr.includes('2026.') && row.length >= 6) {
+                        let timeCol = String(row[0] || '');
+                        let profitVal = parseFloat(row[row.length - 1]);
+                        if (!isNaN(profitVal)) {
+                            let parts = timeCol.split(' ');
+                            allTrades.push({
+                                ticket: row[1] || `REC-${idx}`,
+                                dateTime: timeCol,
+                                date: parts[0] || '',
+                                time: parts[1] || '',
+                                type: row[3] || 'BUY',
+                                symbol: row[2] || 'WINFUT',
+                                volume: String(row[4] || '1'),
+                                price: String(row[5] || '0'),
+                                profit: profitVal
+                            });
+                        }
+                    }
+                });
+            }
+
+            renderDashboard();
+        }
+
+        function renderDashboard() {
+            uploadSection.classList.add('hidden');
+            dashboardContent.classList.remove('hidden');
+
+            const timestampEl = document.getElementById('reportTimestamp');
+            document.getElementById('reportTimeDisplay').textContent = `Gerado em: ${reportGeneratedTime}`;
+            timestampEl.classList.remove('hidden');
+            timestampEl.classList.add('flex');
+
+            let totalTrades = allTrades.length;
+            let netProfit = allTrades.reduce((acc, t) => acc + t.profit, 0);
+            let wins = allTrades.filter(t => t.profit > 0);
+            let losses = allTrades.filter(t => t.profit < 0);
+            let winRate = totalTrades > 0 ? (wins.length / totalTrades) * 100 : 0;
+
+            let grossProfit = wins.reduce((acc, t) => acc + t.profit, 0);
+            let grossLoss = Math.abs(losses.reduce((acc, t) => acc + t.profit, 0));
+            let profitFactor = grossLoss > 0 ? (grossProfit / grossLoss).toFixed(2) : (grossProfit > 0 ? 'Inf' : '0.0');
+
+            let maxProfit = wins.length > 0 ? Math.max(...wins.map(t => t.profit)) : 0;
+            let maxLoss = losses.length > 0 ? Math.min(...losses.map(t => t.profit)) : 0;
+
+            document.getElementById('kpiNetProfit').textContent = `R$ ${netProfit.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpiNetProfit').className = `text-2xl font-bold mt-2 ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+            document.getElementById('kpiProfitFactor').textContent = `Fator: ${profitFactor}`;
+            document.getElementById('kpiTotalTrades').textContent = totalTrades;
+            document.getElementById('kpiWinCount').textContent = `${wins.length} Acertos`;
+            document.getElementById('kpiLossCount').textContent = `${losses.length} Erros`;
+            document.getElementById('kpiWinRate').textContent = `${winRate.toFixed(1)}%`;
+            document.getElementById('kpiMaxProfit').textContent = `R$ ${maxProfit.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpiMaxLoss').textContent = `R$ ${maxLoss.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+
+            applyColumnFilters();
+            renderCharts(allTrades);
+        }
+
+        function populateTable(trades) {
+            const tbody = document.getElementById('tradeTableBody');
+            tbody.innerHTML = '';
+
+            if (trades.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-500">Nenhuma operação encontrada com os filtros informados.</td></tr>`;
+                return;
+            }
+
+            trades.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/50 transition';
+                const isProfit = t.profit >= 0;
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono text-slate-400">${t.ticket}</td>
+                    <td class="py-3 px-4">${t.dateTime}</td>
+                    <td class="py-3 px-4 uppercase font-semibold text-xs ${String(t.type).toLowerCase().includes('buy') || String(t.type).toLowerCase().includes('compra') ? 'text-emerald-400' : 'text-rose-400'}">${t.type}</td>
+                    <td class="py-3 px-4 font-semibold text-white">${t.symbol}</td>
+                    <td class="py-3 px-4">${t.volume}</td>
+                    <td class="py-3 px-4 text-right font-mono">${t.price}</td>
+                    <td class="py-3 px-4 text-right font-mono font-bold ${isProfit ? 'text-emerald-400' : 'text-rose-400'}">
+                        ${isProfit ? '+' : ''}${t.profit.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function applyColumnFilters() {
+            const dVal = filterDate.value.toLowerCase();
+            const tVal = filterTime.value.toLowerCase();
+            const typeVal = filterType.value.toLowerCase();
+            const aVal = filterAsset.value.toLowerCase();
+            const vVal = filterVolume.value.toLowerCase();
+            const pVal = filterPrice.value.toLowerCase();
+            const profVal = filterProfit.value.toLowerCase();
+
+            const filtered = allTrades.filter(t => {
+                const matchDate = t.date.toLowerCase().includes(dVal);
+                const matchTime = t.time.toLowerCase().includes(tVal);
+                const matchType = String(t.type).toLowerCase().includes(typeVal);
+                const matchAsset = String(t.symbol).toLowerCase().includes(aVal);
+                const matchVolume = String(t.volume).toLowerCase().includes(vVal);
+                const matchPrice = String(t.price).toLowerCase().includes(pVal);
+                const matchProfit = String(t.profit).toLowerCase().includes(profVal);
+
+                return matchDate && matchTime && matchType && matchAsset && matchVolume && matchPrice && matchProfit;
+            });
+
+            populateTable(filtered);
+        }
+
+        [filterDate, filterTime, filterType, filterAsset, filterVolume, filterPrice, filterProfit].forEach(input => {
+            input.addEventListener('input', applyColumnFilters);
+        });
+
+        clearFiltersBtn.addEventListener('click', () => {
+            filterDate.value = '';
+            filterTime.value = '';
+            filterType.value = '';
+            filterAsset.value = '';
+            filterVolume.value = '';
+            filterPrice.value = '';
+            filterProfit.value = '';
+            applyColumnFilters();
+        });
+
+        function renderCharts(trades) {
+            let cumulative = 0;
+            const equityData = trades.map((t, idx) => {
+                cumulative += t.profit;
+                return { x: idx + 1, y: cumulative };
+            });
+
+            const ctxEquity = document.getElementById('equityChart').getContext('2d');
+            if (equityChartInstance) equityChartInstance.destroy();
+
+            equityChartInstance = new Chart(ctxEquity, {
+                type: 'line',
+                data: {
+                    labels: trades.map((_, i) => `#${i + 1}`),
+                    datasets: [{
+                        label: 'Lucro Acumulado (R$)',
+                        data: equityData.map(d => d.y),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.2,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+
+            const winsCount = trades.filter(t => t.profit > 0).length;
+            const lossesCount = trades.filter(t => t.profit <= 0).length;
+
+            const ctxWinLoss = document.getElementById('winLossChart').getContext('2d');
+            if (winLossChartInstance) winLossChartInstance.destroy();
+
+            winLossChartInstance = new Chart(ctxWinLoss, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Operações Lucrativas', 'Operações no Prejuízo'],
+                    datasets: [{
+                        data: [winsCount, lossesCount],
+                        backgroundColor: ['#10b981', '#f43f5e'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#cbd5e1', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
