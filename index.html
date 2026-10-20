@@ -141,7 +141,7 @@
                 <!-- Equity Curve Chart -->
                 <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md lg:col-span-2 flex flex-col">
                     <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-chart-area text-emerald-400"></i> Curva de Património / Lucro Acumulado
+                        <i class="fa-solid fa-chart-area text-emerald-400"></i> Curva de Património / Lucro Acumulado (por Horário)
                     </h3>
                     <div class="relative flex-grow h-72">
                         <canvas id="equityChart"></canvas>
@@ -168,7 +168,7 @@
                         <button id="clearFilters" class="text-xs text-slate-400 hover:text-emerald-400 transition underline cursor-pointer">Limpar Filtros</button>
                     </div>
                     
-                    <!-- Advanced Filters Grid (Apenas para as colunas visíveis) -->
+                    <!-- Advanced Filters Grid -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-800">
                         <div>
                             <label class="block text-[10px] text-slate-400 uppercase font-medium mb-1">Tipo</label>
@@ -571,7 +571,8 @@
             equityChartInstance = new Chart(ctxEquity, {
                 type: 'line',
                 data: {
-                    labels: trades.map((_, i) => `#${i + 1}`),
+                    // Exibe o horário de cada trade no eixo X
+                    labels: trades.map(t => t.time || t.dateTime || ''),
                     datasets: [{
                         label: 'Lucro Acumulado (R$)',
                         data: equityData.map(d => d.y),
@@ -589,7 +590,13 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                        x: { 
+                            grid: { color: '#334155' }, 
+                            ticks: { 
+                                color: '#94a3b8',
+                                maxTicksLimit: 12 // Limita a quantidade de horários exibidos para não sobrepor o eixo
+                            } 
+                        },
                         y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
                     }
                 }
