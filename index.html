@@ -84,7 +84,7 @@
                 </div>
                 <div>
                     <h2 class="text-lg font-semibold text-white">Carregando Relatórios do Repositório</h2>
-                    <p class="text-xs text-slate-400 mt-1">Conectando ao caminho fixo:<br><span class="text-emerald-400 font-mono text-[11px]">https://gatewaytecnologia.github.io/DayTrade/Relatorios</span></p>
+                    <p class="text-xs text-slate-400 mt-1">Conectando ao caminho fixo:<br><span class="text-emerald-400 font-mono text-[11px]">https://gatewaytecnologia.github.io/DayTrade/</span></p>
                 </div>
                 <button id="loadReportsBtn" class="inline-block bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl cursor-pointer shadow-lg shadow-emerald-900/30 transition">
                     Carregar Relatórios Agora
@@ -264,8 +264,8 @@
         });
 
         async function fetchGitHubReports() {
-            // URL da API do GitHub para listar os arquivos na pasta Relatorios do repositório DayTrade
-            const apiUrl = 'https://api.github.com/repos/GatewayTecnologia/DayTrade/contents/Relatorios';
+            // URL da API do GitHub para listar os arquivos na pasta DayTrade do repositório DayTrade
+            const apiUrl = 'https://api.github.com/repos/GatewayTecnologia/DayTrade/';
             
             loadReportsBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Carregando...';
 
@@ -284,7 +284,7 @@
                 });
 
                 if (reportFiles.length === 0) {
-                    alert('Nenhum relatório compatível (.xml, .xlsx, .xls, .csv) encontrado na pasta Relatorios.');
+                    alert('Nenhum relatório compatível (.xml, .xlsx, .xls, .csv) encontrado na pasta DayTrade.');
                     loadReportsBtn.innerHTML = 'Tentar Novamente';
                     return;
                 }
@@ -303,7 +303,7 @@
                     folderFileSelect.appendChild(opt);
                 });
 
-                fileNameDisplay.textContent = `Relatórios: Relatorios/ (${reportFiles.length} arquivos)`;
+                fileNameDisplay.textContent = `Relatórios: DayTrade/ (${reportFiles.length} arquivos)`;
                 fileInfo.classList.remove('hidden');
                 fileInfo.classList.add('flex');
                 fileSelectorContainer.classList.remove('hidden');
