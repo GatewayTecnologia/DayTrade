@@ -158,6 +158,16 @@
                 </div>
             </div>
 
+            <!-- Drawdown Chart Section (Full Width) -->
+            <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md flex flex-col">
+                <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-rose-400"></i> Drawdown (Rebaixamento de Capital por Horário)
+                </h3>
+                <div class="relative h-64">
+                    <canvas id="drawdownChart"></canvas>
+                </div>
+            </div>
+
             <!-- Transactions Table with Granular Column Filters -->
             <div class="bg-cardBg border border-borderCol rounded-xl shadow-md overflow-hidden">
                 <div class="p-5 border-b border-borderCol flex flex-col gap-4">
@@ -219,6 +229,7 @@
     <script>
         let equityChartInstance = null;
         let winLossChartInstance = null;
+        let drawdownChartInstance = null;
         let allTrades = [];
         let reportGeneratedTime = '';
         let directoryFilesMap = new Map();
@@ -565,13 +576,13 @@
                 return { x: idx + 1, y: cumulative };
             });
 
+            // 1. Curva de Património
             const ctxEquity = document.getElementById('equityChart').getContext('2d');
             if (equityChartInstance) equityChartInstance.destroy();
 
             equityChartInstance = new Chart(ctxEquity, {
                 type: 'line',
                 data: {
-                    // Exibe o horário de cada trade no eixo X
                     labels: trades.map(t => t.time || t.dateTime || ''),
                     datasets: [{
                         label: 'Lucro Acumulado (R$)',
@@ -592,16 +603,14 @@
                     scales: {
                         x: { 
                             grid: { color: '#334155' }, 
-                            ticks: { 
-                                color: '#94a3b8',
-                                maxTicksLimit: 12 // Limita a quantidade de horários exibidos para não sobrepor o eixo
-                            } 
+                            ticks: { color: '#94a3b8', maxTicksLimit: 12 } 
                         },
                         y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
                     }
                 }
             });
 
+            // 2. Gráfico de Eficiência (Wins vs Losses)
             const winsCount = trades.filter(t => t.profit > 0).length;
             const lossesCount = trades.filter(t => t.profit <= 0).length;
 
@@ -625,6 +634,53 @@
                         legend: {
                             position: 'bottom',
                             labels: { color: '#cbd5e1', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+
+            // 3. Gráfico de Drawdown
+            let peak = 0;
+            let runCumulative = 0;
+            const drawdownData = trades.map(t => {
+                runCumulative += t.profit;
+                if (runCumulative > peak) {
+                    peak = runCumulative;
+                }
+                return runCumulative - peak; // Valores negativos ou zero (distância do topo)
+            });
+
+            const ctxDrawdown = document.getElementById('drawdownChart').getContext('2d');
+            if (drawdownChartInstance) drawdownChartInstance.destroy();
+
+            drawdownChartInstance = new Chart(ctxDrawdown, {
+                type: 'line',
+                data: {
+                    labels: trades.map(t => t.time || ''),
+                    datasets: [{
+                        label: 'Drawdown (R$)',
+                        data: drawdownData,
+                        borderColor: '#f43f5e',
+                        backgroundColor: 'rgba(244, 63, 94, 0.15)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.2,
+                        pointRadius: 2,
+                        pointBackgroundColor: '#f43f5e'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { 
+                            grid: { color: '#334155' }, 
+                            ticks: { color: '#94a3b8', maxTicksLimit: 12 } 
+                        },
+                        y: { 
+                            grid: { color: '#334155' }, 
+                            ticks: { color: '#94a3b8' } 
                         }
                     }
                 }
