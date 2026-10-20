@@ -35,7 +35,7 @@
 </head>
 <body class="bg-darkBg text-slate-100 min-h-screen flex flex-col">
 
-    <!-- Header -->
+    <!-- Header[cite: 1] -->
     <header class="bg-cardBg border-b border-borderCol py-4 px-6 shadow-md">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
@@ -66,7 +66,7 @@
         </div>
     </header>
 
-    <!-- Main Container -->
+    <!-- Main Container[cite: 1] -->
     <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
 
         <!-- Seleção de Ficheiros / Carregamento -->
@@ -103,7 +103,7 @@
         <!-- Dashboard Content -->
         <div id="dashboardContent" class="hidden space-y-6">
 
-            <!-- KPI Summary Cards -->
+            <!-- KPI Summary Cards[cite: 1] -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md">
                     <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Lucro Líquido Total</p>
@@ -136,7 +136,7 @@
                 </div>
             </div>
 
-            <!-- Charts Section -->
+            <!-- Charts Section[cite: 1] -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Equity Curve Chart -->
                 <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md lg:col-span-2 flex flex-col">
@@ -168,7 +168,17 @@
                 </div>
             </div>
 
-            <!-- Transactions Table with Granular Column Filters -->
+            <!-- Volume Chart Section (Full Width) -->
+            <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md flex flex-col">
+                <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-bar text-sky-400"></i> Volume / Contratos por Operação (por Horário)
+                </h3>
+                <div class="relative h-64">
+                    <canvas id="volumeChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Transactions Table with Granular Column Filters[cite: 1] -->
             <div class="bg-cardBg border border-borderCol rounded-xl shadow-md overflow-hidden">
                 <div class="p-5 border-b border-borderCol flex flex-col gap-4">
                     <div class="flex justify-between items-center">
@@ -220,7 +230,7 @@
 
     </main>
 
-    <!-- Footer -->
+    <!-- Footer[cite: 1] -->
     <footer class="bg-cardBg border-t border-borderCol py-4 text-center text-xs text-slate-500 mt-auto">
         Gateway Tecnologia &copy; 2026 - Análise Automatizada de Relatórios
     </footer>
@@ -230,6 +240,7 @@
         let equityChartInstance = null;
         let winLossChartInstance = null;
         let drawdownChartInstance = null;
+        let volumeChartInstance = null;
         let allTrades = [];
         let reportGeneratedTime = '';
         let directoryFilesMap = new Map();
@@ -647,7 +658,7 @@
                 if (runCumulative > peak) {
                     peak = runCumulative;
                 }
-                return runCumulative - peak; // Valores negativos ou zero (distância do topo)
+                return runCumulative - peak;
             });
 
             const ctxDrawdown = document.getElementById('drawdownChart').getContext('2d');
@@ -681,6 +692,41 @@
                         y: { 
                             grid: { color: '#334155' }, 
                             ticks: { color: '#94a3b8' } 
+                        }
+                    }
+                }
+            });
+
+            // 4. Gráfico de Volume (Contratos por Operação)
+            const volumeData = trades.map(t => parseFloat(t.volume) || 0);
+            const ctxVolume = document.getElementById('volumeChart').getContext('2d');
+            if (volumeChartInstance) volumeChartInstance.destroy();
+
+            volumeChartInstance = new Chart(ctxVolume, {
+                type: 'bar',
+                data: {
+                    labels: trades.map(t => t.time || ''),
+                    datasets: [{
+                        label: 'Volume (Contratos)',
+                        data: volumeData,
+                        backgroundColor: 'rgba(56, 189, 248, 0.6)',
+                        borderColor: '#38bdf8',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { 
+                            grid: { color: '#334155' }, 
+                            ticks: { color: '#94a3b8', maxTicksLimit: 12 } 
+                        },
+                        y: { 
+                            grid: { color: '#334155' }, 
+                            ticks: { color: '#94a3b8', precision: 0 } 
                         }
                     }
                 }
