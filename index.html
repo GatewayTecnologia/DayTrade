@@ -44,7 +44,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-tight text-white">Gateway Tecnologia</h1>
-                    <p class="text-xs text-slate-400">Análise Avançada de Relatórios (Caminho Fixo)</p>
+                    <p class="text-xs text-slate-400">Análise Avançada de Relatórios (Diretório Raiz)</p>
                 </div>
             </div>
             <div class="flex items-center gap-3 flex-wrap">
@@ -63,7 +63,7 @@
                 <!-- Info da Pasta Configurada -->
                 <div id="fileInfo" class="hidden text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 flex items-center gap-2">
                     <i class="fa-solid fa-folder-open text-emerald-400"></i>
-                    <span id="fileNameDisplay">Repositório Conectado</span>
+                    <span id="fileNameDisplay">Diretório Local do HTML</span>
                 </div>
                 <!-- Botão para Atualizar / Recarregar Pasta -->
                 <button id="refreshFolderBtn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 flex items-center gap-2 transition cursor-pointer text-xs">
@@ -83,8 +83,8 @@
                     <i class="fa-solid fa-cloud-arrow-down"></i>
                 </div>
                 <div>
-                    <h2 class="text-lg font-semibold text-white">Carregando Relatórios do Repositório</h2>
-                    <p class="text-xs text-slate-400 mt-1">Conectando ao caminho fixo:<br><span class="text-emerald-400 font-mono text-[11px]">https://gatewaytecnologia.github.io/DayTrade/</span></p>
+                    <h2 class="text-lg font-semibold text-white">Carregando Relatórios do Diretório</h2>
+                    <p class="text-xs text-slate-400 mt-1">Buscando relatórios XML no mesmo diretório do arquivo HTML.<br><span class="text-emerald-400 font-mono text-[11px]">https://gatewaytecnologia.github.io/DayTrade/</span></p>
                 </div>
                 <button id="loadReportsBtn" class="inline-block bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl cursor-pointer shadow-lg shadow-emerald-900/30 transition">
                     Carregar Relatórios Agora
@@ -222,7 +222,7 @@
         Gateway Tecnologia &copy; 2026 - Análise Automatizada de Relatórios
     </footer>
 
-    <!-- Script Robusto com Caminho Fixo via GitHub API -->
+    <!-- Script com busca no mesmo diretório do index.html -->
     <script>
         let equityChartInstance = null;
         let winLossChartInstance = null;
@@ -264,19 +264,19 @@
         });
 
         async function fetchGitHubReports() {
-            // URL da API do GitHub para listar os arquivos na pasta DayTrade do repositório DayTrade
-            const apiUrl = 'https://api.github.com/repos/GatewayTecnologia/DayTrade/';
+            // Consulta o mesmo diretório onde o index.html está (raiz do repositório)
+            const apiUrl = 'https://api.github.com/repos/GatewayTecnologia/DayTrade/contents';
             
             loadReportsBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Carregando...';
 
             try {
                 const response = await fetch(apiUrl);
                 if (!response.ok) {
-                    throw new Error('Não foi possível acessar a pasta no GitHub.');
+                    throw new Error('Não foi possível acessar a pasta do repositório.');
                 }
                 const filesData = await response.json();
 
-                const validExtensions = ['.xlsx', '.xls', '.xml', '.csv'];
+                const validExtensions = ['.xml', '.xlsx', '.xls', '.csv'];
                 const reportFiles = filesData.filter(file => {
                     if (file.type !== 'file') return false;
                     const lowerName = file.name.toLowerCase();
@@ -284,12 +284,19 @@
                 });
 
                 if (reportFiles.length === 0) {
-                    alert('Nenhum relatório compatível (.xml, .xlsx, .xls, .csv) encontrado na pasta DayTrade.');
-                    loadReportsBtn.innerHTML = 'Tentar Novamente';
-                    return;
+                    // Fallback para tentar ler diretamente './ReportHistory.xml' se a API do GitHub estiver limitada
+                    try {
+                        const fallbackFile = { name: 'ReportHistory.xml', download_url: './ReportHistory.xml' };
+                        await processGitHubFile(fallbackFile);
+                        return;
+                    } catch (fbErr) {
+                        alert('Nenhum relatório XML/XLSX encontrado no diretório do HTML.');
+                        loadReportsBtn.innerHTML = 'Tentar Novamente';
+                        return;
+                    }
                 }
 
-                // Ordenar por nome ou data (mais recente primeiro)
+                // Ordenar por nome (mais recente primeiro)
                 reportFiles.sort((a, b) => b.name.localeCompare(a.name));
 
                 folderFilesMap.clear();
@@ -303,21 +310,27 @@
                     folderFileSelect.appendChild(opt);
                 });
 
-                fileNameDisplay.textContent = `Relatórios: DayTrade/ (${reportFiles.length} arquivos)`;
+                fileNameDisplay.textContent = `Diretório Raiz (${reportFiles.length} relatórios)`;
                 fileInfo.classList.remove('hidden');
                 fileInfo.classList.add('flex');
                 fileSelectorContainer.classList.remove('hidden');
                 fileSelectorContainer.classList.add('flex');
 
-                // Carrega automaticamente o arquivo mais recente
+                // Carrega automaticamente o primeiro relatório encontrado
                 const latestFile = reportFiles[0];
                 folderFileSelect.value = latestFile.name;
                 await processGitHubFile(latestFile);
 
             } catch (err) {
-                console.error(err);
-                alert('Erro ao carregar os relatórios do repositório. Verifique sua conexão.');
-                loadReportsBtn.innerHTML = 'Tentar Novamente';
+                console.error('Tentando carregar caminho relativo direto...', err);
+                // Caso a API falhe, faz uma tentativa direta pelo caminho relativo `./`
+                try {
+                    const fallbackFile = { name: 'ReportHistory.xml', download_url: './ReportHistory.xml' };
+                    await processGitHubFile(fallbackFile);
+                } catch (fbErr) {
+                    alert('Erro ao carregar o relatório no diretório.');
+                    loadReportsBtn.innerHTML = 'Tentar Novamente';
+                }
             }
         }
 
@@ -349,274 +362,4 @@
                 if (!row || row.length === 0) continue;
                 const rowStr = row.map(c => String(c).trim()).join(' ');
 
-                if (rowStr.toLowerCase().includes('gerado') || rowStr.toLowerCase().includes('data') || rowStr.toLowerCase().includes('date') || rowStr.toLowerCase().includes('relatório') || /\d{4}[./-]\d{2}[./-]\d{2}/.test(rowStr)) {
-                    for (let cell of row) {
-                        let cellStr = String(cell).trim();
-                        if (/\d{4}[./-]\d{2}[./-]\d{2}/.test(cellStr)) {
-                            reportGeneratedTime = cellStr;
-                            break;
-                        }
-                    }
-                    if (!reportGeneratedTime && /\d{4}[./-]\d{2}[./-]\d{2}/.test(rowStr)) {
-                        reportGeneratedTime = rowStr;
-                        break;
-                    }
-                }
-            }
-
-            if (!reportGeneratedTime) {
-                reportGeneratedTime = new Date().toLocaleString('pt-BR');
-            }
-
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row || row.length === 0) continue;
-                
-                const rowStr = row.map(c => String(c).trim()).join(' ');
-
-                if (rowStr.toLowerCase().includes('posições') || (rowStr.includes('Position') && rowStr.includes('Ativo'))) {
-                    inPositionsSection = true;
-                    continue;
-                }
-
-                if (inPositionsSection && (rowStr.toLowerCase().includes('ordens') || rowStr.toLowerCase().includes('transações') || rowStr.toLowerCase().includes('posições abertas'))) {
-                    inPositionsSection = false;
-                }
-
-                if (inPositionsSection && row.length >= 6) {
-                    let timeCol = String(row[0] || '');
-                    if (timeCol.includes('2026.') || timeCol.includes('2025.') || timeCol.includes('.')) {
-                        let ticket = row[1] || `TKT-${i}`;
-                        let asset = row[2] || 'WINFUT';
-                        let type = row[3] || 'BUY';
-                        let volume = String(row[4] || '1');
-                        let price = String(row[5] || '0');
-                        
-                        let profitVal = NaN;
-                        for (let c = row.length - 1; c >= 6; c--) {
-                            let val = parseFloat(row[c]);
-                            if (!isNaN(val)) {
-                                profitVal = val;
-                                break;
-                            }
-                        }
-                        if (isNaN(profitVal) && row.length >= 13) {
-                            profitVal = parseFloat(row[12]) || 0;
-                        }
-
-                        if (!isNaN(profitVal)) {
-                            let parts = timeCol.split(' ');
-                            allTrades.push({
-                                ticket: ticket,
-                                dateTime: timeCol,
-                                date: parts[0] || '',
-                                time: parts[1] || '',
-                                type: type,
-                                symbol: asset,
-                                volume: volume,
-                                price: price,
-                                profit: profitVal
-                            });
-                        }
-                    }
-                }
-            }
-
-            if (allTrades.length === 0) {
-                rows.forEach((row, idx) => {
-                    let rowStr = row.map(c => String(c)).join(' ');
-                    if (rowStr.includes('2026.') && row.length >= 6) {
-                        let timeCol = String(row[0] || '');
-                        let profitVal = parseFloat(row[row.length - 1]);
-                        if (!isNaN(profitVal)) {
-                            let parts = timeCol.split(' ');
-                            allTrades.push({
-                                ticket: row[1] || `REC-${idx}`,
-                                dateTime: timeCol,
-                                date: parts[0] || '',
-                                time: parts[1] || '',
-                                type: row[3] || 'BUY',
-                                symbol: row[2] || 'WINFUT',
-                                volume: String(row[4] || '1'),
-                                price: String(row[5] || '0'),
-                                profit: profitVal
-                            });
-                        }
-                    }
-                });
-            }
-
-            renderDashboard();
-        }
-
-        function renderDashboard() {
-            uploadSection.classList.add('hidden');
-            dashboardContent.classList.remove('hidden');
-
-            const timestampEl = document.getElementById('reportTimestamp');
-            document.getElementById('reportTimeDisplay').textContent = `Gerado em: ${reportGeneratedTime}`;
-            timestampEl.classList.remove('hidden');
-            timestampEl.classList.add('flex');
-
-            let totalTrades = allTrades.length;
-            let netProfit = allTrades.reduce((acc, t) => acc + t.profit, 0);
-            let wins = allTrades.filter(t => t.profit > 0);
-            let losses = allTrades.filter(t => t.profit < 0);
-            let winRate = totalTrades > 0 ? (wins.length / totalTrades) * 100 : 0;
-
-            let grossProfit = wins.reduce((acc, t) => acc + t.profit, 0);
-            let grossLoss = Math.abs(losses.reduce((acc, t) => acc + t.profit, 0));
-            let profitFactor = grossLoss > 0 ? (grossProfit / grossLoss).toFixed(2) : (grossProfit > 0 ? 'Inf' : '0.0');
-
-            let maxProfit = wins.length > 0 ? Math.max(...wins.map(t => t.profit)) : 0;
-            let maxLoss = losses.length > 0 ? Math.min(...losses.map(t => t.profit)) : 0;
-
-            document.getElementById('kpiNetProfit').textContent = `R$ ${netProfit.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            document.getElementById('kpiNetProfit').className = `text-2xl font-bold mt-2 ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
-            document.getElementById('kpiProfitFactor').textContent = `Fator: ${profitFactor}`;
-            document.getElementById('kpiTotalTrades').textContent = totalTrades;
-            document.getElementById('kpiWinCount').textContent = `${wins.length} Acertos`;
-            document.getElementById('kpiLossCount').textContent = `${losses.length} Erros`;
-            document.getElementById('kpiWinRate').textContent = `${winRate.toFixed(1)}%`;
-            document.getElementById('kpiMaxProfit').textContent = `R$ ${maxProfit.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            document.getElementById('kpiMaxLoss').textContent = `R$ ${maxLoss.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-
-            applyColumnFilters();
-            renderCharts(allTrades);
-        }
-
-        function populateTable(trades) {
-            const tbody = document.getElementById('tradeTableBody');
-            tbody.innerHTML = '';
-
-            if (trades.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-500">Nenhuma operação encontrada com os filtros informados.</td></tr>`;
-                return;
-            }
-
-            trades.forEach(t => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-800/50 transition';
-                const isProfit = t.profit >= 0;
-                tr.innerHTML = `
-                    <td class="py-3 px-4 font-mono text-slate-400">${t.ticket}</td>
-                    <td class="py-3 px-4">${t.dateTime}</td>
-                    <td class="py-3 px-4 uppercase font-semibold text-xs ${String(t.type).toLowerCase().includes('buy') || String(t.type).toLowerCase().includes('compra') ? 'text-emerald-400' : 'text-rose-400'}">${t.type}</td>
-                    <td class="py-3 px-4 font-semibold text-white">${t.symbol}</td>
-                    <td class="py-3 px-4">${t.volume}</td>
-                    <td class="py-3 px-4 text-right font-mono">${t.price}</td>
-                    <td class="py-3 px-4 text-right font-mono font-bold ${isProfit ? 'text-emerald-400' : 'text-rose-400'}">
-                        ${isProfit ? '+' : ''}${t.profit.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function applyColumnFilters() {
-            const dVal = filterDate.value.toLowerCase();
-            const tVal = filterTime.value.toLowerCase();
-            const typeVal = filterType.value.toLowerCase();
-            const aVal = filterAsset.value.toLowerCase();
-            const vVal = filterVolume.value.toLowerCase();
-            const pVal = filterPrice.value.toLowerCase();
-            const profVal = filterProfit.value.toLowerCase();
-
-            const filtered = allTrades.filter(t => {
-                const matchDate = t.date.toLowerCase().includes(dVal);
-                const matchTime = t.time.toLowerCase().includes(tVal);
-                const matchType = String(t.type).toLowerCase().includes(typeVal);
-                const matchAsset = String(t.symbol).toLowerCase().includes(aVal);
-                const matchVolume = String(t.volume).toLowerCase().includes(vVal);
-                const matchPrice = String(t.price).toLowerCase().includes(pVal);
-                const matchProfit = String(t.profit).toLowerCase().includes(profVal);
-
-                return matchDate && matchTime && matchType && matchAsset && matchVolume && matchPrice && matchProfit;
-            });
-
-            populateTable(filtered);
-        }
-
-        [filterDate, filterTime, filterType, filterAsset, filterVolume, filterPrice, filterProfit].forEach(input => {
-            input.addEventListener('input', applyColumnFilters);
-        });
-
-        clearFiltersBtn.addEventListener('click', () => {
-            filterDate.value = '';
-            filterTime.value = '';
-            filterType.value = '';
-            filterAsset.value = '';
-            filterVolume.value = '';
-            filterPrice.value = '';
-            filterProfit.value = '';
-            applyColumnFilters();
-        });
-
-        function renderCharts(trades) {
-            let cumulative = 0;
-            const equityData = trades.map((t, idx) => {
-                cumulative += t.profit;
-                return { x: idx + 1, y: cumulative };
-            });
-
-            const ctxEquity = document.getElementById('equityChart').getContext('2d');
-            if (equityChartInstance) equityChartInstance.destroy();
-
-            equityChartInstance = new Chart(ctxEquity, {
-                type: 'line',
-                data: {
-                    labels: trades.map((_, i) => `#${i + 1}`),
-                    datasets: [{
-                        label: 'Lucro Acumulado (R$)',
-                        data: equityData.map(d => d.y),
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.2,
-                        pointRadius: 3,
-                        pointBackgroundColor: '#10b981'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
-                        y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
-                    }
-                }
-            });
-
-            const winsCount = trades.filter(t => t.profit > 0).length;
-            const lossesCount = trades.filter(t => t.profit <= 0).length;
-
-            const ctxWinLoss = document.getElementById('winLossChart').getContext('2d');
-            if (winLossChartInstance) winLossChartInstance.destroy();
-
-            winLossChartInstance = new Chart(ctxWinLoss, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Operações Lucrativas', 'Operações no Prejuízo'],
-                    datasets: [{
-                        data: [winsCount, lossesCount],
-                        backgroundColor: ['#10b981', '#f43f5e'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { color: '#cbd5e1', font: { size: 11 } }
-                        }
-                    }
-                }
-            });
-        }
-    </script>
-</body>
-</html>
+                if (rowStr.toLowerCase().includes('gerado') || rowStr.toLowerCase().includes('data') || rowStr.toLowerCase().includes('date') || rowStr.toLowerCase().includes('relatório') || /\d{4}[./-]\d{2}
