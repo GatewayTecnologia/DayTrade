@@ -39,12 +39,12 @@
     <header class="bg-cardBg border-b border-borderCol py-4 px-6 shadow-md">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
-                <div class="bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/20 text-emerald-400">
+                <div class="bg-emerald-500/15 p-2.5 rounded-xl border border-emerald-500/30 text-emerald-400">
                     <i class="fa-solid fa-chart-line text-xl"></i>
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-tight text-white">Gateway Tecnologia</h1>
-                    <p class="text-xs text-slate-400">Análise Avançada de Relatórios de Histórico (MT5 / Relatórios)</p>
+                    <p class="text-xs text-slate-400">Análise Avançada de Relatórios (Caminho Fixo)</p>
                 </div>
             </div>
             <div class="flex items-center gap-3 flex-wrap">
@@ -63,11 +63,11 @@
                 <!-- Info da Pasta Configurada -->
                 <div id="fileInfo" class="hidden text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 flex items-center gap-2">
                     <i class="fa-solid fa-folder-open text-emerald-400"></i>
-                    <span id="fileNameDisplay">Nenhuma pasta configurada</span>
+                    <span id="fileNameDisplay">Repositório Conectado</span>
                 </div>
-                <!-- Botão para Alterar Pasta -->
-                <button id="changeFolderBtn" class="hidden text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 items-center gap-2 transition cursor-pointer">
-                    <i class="fa-solid fa-rotate text-emerald-400"></i> Alterar Pasta
+                <!-- Botão para Atualizar / Recarregar Pasta -->
+                <button id="refreshFolderBtn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 flex items-center gap-2 transition cursor-pointer text-xs">
+                    <i class="fa-solid fa-rotate text-emerald-400"></i> Atualizar Relatórios
                 </button>
             </div>
         </div>
@@ -76,20 +76,19 @@
     <!-- Main Container -->
     <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
 
-        <!-- Folder Configuration Section -->
+        <!-- Loading / Initial Section -->
         <section id="uploadSection" class="bg-cardBg border border-borderCol rounded-2xl p-8 text-center shadow-lg transition hover:border-emerald-500/50">
             <div class="max-w-md mx-auto space-y-4">
-                <div class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto text-emerald-400 text-2xl">
-                    <i class="fa-solid fa-folder-open"></i>
+                <div class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto text-emerald-400 text-2xl animate-pulse">
+                    <i class="fa-solid fa-cloud-arrow-down"></i>
                 </div>
                 <div>
-                    <h2 class="text-lg font-semibold text-white">Configurar Pasta de Relatórios</h2>
-                    <p class="text-xs text-slate-400 mt-1">Selecione a pasta onde os relatórios do MetaTrader são salvos. O sistema detectará e carregará automaticamente o relatório mais recente.</p>
+                    <h2 class="text-lg font-semibold text-white">Carregando Relatórios do Repositório</h2>
+                    <p class="text-xs text-slate-400 mt-1">Conectando ao caminho fixo:<br><span class="text-emerald-400 font-mono text-[11px]">https://gatewaytecnologia.github.io/DayTrade/Relatorios</span></p>
                 </div>
-                <label class="inline-block bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl cursor-pointer shadow-lg shadow-emerald-900/30 transition">
-                    Selecionar Pasta de Relatórios
-                    <input type="file" id="reportFolder" webkitdirectory directory class="hidden">
-                </label>
+                <button id="loadReportsBtn" class="inline-block bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl cursor-pointer shadow-lg shadow-emerald-900/30 transition">
+                    Carregar Relatórios Agora
+                </button>
             </div>
         </section>
 
@@ -223,7 +222,7 @@
         Gateway Tecnologia &copy; 2026 - Análise Automatizada de Relatórios
     </footer>
 
-    <!-- Script Robusto de Parsing com Seleção de Pasta e Auto-Carregamento -->
+    <!-- Script Robusto com Caminho Fixo via GitHub API -->
     <script>
         let equityChartInstance = null;
         let winLossChartInstance = null;
@@ -231,14 +230,14 @@
         let reportGeneratedTime = '';
         let folderFilesMap = new Map();
 
-        const folderInput = document.getElementById('reportFolder');
         const uploadSection = document.getElementById('uploadSection');
         const dashboardContent = document.getElementById('dashboardContent');
         const fileInfo = document.getElementById('fileInfo');
         const fileNameDisplay = document.getElementById('fileNameDisplay');
         const fileSelectorContainer = document.getElementById('fileSelectorContainer');
         const folderFileSelect = document.getElementById('folderFileSelect');
-        const changeFolderBtn = document.getElementById('changeFolderBtn');
+        const loadReportsBtn = document.getElementById('loadReportsBtn');
+        const refreshFolderBtn = document.getElementById('refreshFolderBtn');
         
         const filterDate = document.getElementById('filterDate');
         const filterTime = document.getElementById('filterTime');
@@ -249,90 +248,95 @@
         const filterProfit = document.getElementById('filterProfit');
         const clearFiltersBtn = document.getElementById('clearFilters');
 
-        folderInput.addEventListener('change', handleFolderSelect);
-        changeFolderBtn.addEventListener('click', resetFolderSelection);
+        loadReportsBtn.addEventListener('click', fetchGitHubReports);
+        refreshFolderBtn.addEventListener('click', fetchGitHubReports);
+
         folderFileSelect.addEventListener('change', (e) => {
             const selectedKey = e.target.value;
             if (folderFilesMap.has(selectedKey)) {
-                processFile(folderFilesMap.get(selectedKey));
+                processGitHubFile(folderFilesMap.get(selectedKey));
             }
         });
 
-        function resetFolderSelection() {
-            dashboardContent.classList.add('hidden');
-            uploadSection.classList.remove('hidden');
-            fileInfo.classList.add('hidden');
-            fileSelectorContainer.classList.add('hidden');
-            changeFolderBtn.classList.add('hidden');
-            document.getElementById('reportTimestamp').classList.add('hidden');
-            folderInput.value = '';
-            folderFilesMap.clear();
-            folderFileSelect.innerHTML = '<option value="">Selecione um relatório...</option>';
-        }
+        // Carrega automaticamente ao abrir a página
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchGitHubReports();
+        });
 
-        function handleFolderSelect(e) {
-            const files = Array.from(e.target.files);
-            if (files.length === 0) return;
+        async function fetchGitHubReports() {
+            // URL da API do GitHub para listar os arquivos na pasta Relatorios do repositório DayTrade
+            const apiUrl = 'https://api.github.com/repos/GatewayTecnologia/DayTrade/contents/Relatorios';
+            
+            loadReportsBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Carregando...';
 
-            const validExtensions = ['.xlsx', '.xls', '.xml', '.csv'];
-            const reportFiles = files.filter(file => {
-                const lowerName = file.name.toLowerCase();
-                return validExtensions.some(ext => lowerName.endsWith(ext));
-            });
-
-            if (reportFiles.length === 0) {
-                alert('Nenhum arquivo de relatório compatível (.xlsx, .xls, .xml, .csv) encontrado na pasta selecionada.');
-                return;
-            }
-
-            // Ordenar por data de modificação (mais recente primeiro)
-            reportFiles.sort((a, b) => (b.lastModified || 0) - (a.lastModified || 0));
-
-            folderFilesMap.clear();
-            folderFileSelect.innerHTML = '';
-
-            reportFiles.forEach(file => {
-                const key = file.webkitRelativePath || file.name;
-                folderFilesMap.set(key, file);
-                const opt = document.createElement('option');
-                opt.value = key;
-                opt.textContent = file.name;
-                folderFileSelect.appendChild(opt);
-            });
-
-            const firstPathParts = (reportFiles[0].webkitRelativePath || '').split('/');
-            const folderName = firstPathParts.length > 1 ? firstPathParts[0] : 'Pasta Configurada';
-
-            fileNameDisplay.textContent = `Pasta: ${folderName} (${reportFiles.length} relatórios)`;
-            fileInfo.classList.remove('hidden');
-            fileSelectorContainer.classList.remove('hidden');
-            fileSelectorContainer.classList.add('flex');
-            changeFolderBtn.classList.remove('hidden');
-            changeFolderBtn.classList.add('flex');
-
-            // Carrega automaticamente o arquivo mais recente
-            const latestKey = reportFiles[0].webkitRelativePath || reportFiles[0].name;
-            folderFileSelect.value = latestKey;
-            processFile(reportFiles[0]);
-        }
-
-        function processFile(file) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                try {
-                    const data = new Uint8Array(event.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                    parseMetaTraderReport(jsonRows, file);
-                } catch (err) {
-                    alert('Erro ao processar o arquivo: ' + file.name);
-                    console.error(err);
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error('Não foi possível acessar a pasta no GitHub.');
                 }
-            };
-            reader.readAsArrayBuffer(file);
+                const filesData = await response.json();
+
+                const validExtensions = ['.xlsx', '.xls', '.xml', '.csv'];
+                const reportFiles = filesData.filter(file => {
+                    if (file.type !== 'file') return false;
+                    const lowerName = file.name.toLowerCase();
+                    return validExtensions.some(ext => lowerName.endsWith(ext));
+                });
+
+                if (reportFiles.length === 0) {
+                    alert('Nenhum relatório compatível (.xml, .xlsx, .xls, .csv) encontrado na pasta Relatorios.');
+                    loadReportsBtn.innerHTML = 'Tentar Novamente';
+                    return;
+                }
+
+                // Ordenar por nome ou data (mais recente primeiro)
+                reportFiles.sort((a, b) => b.name.localeCompare(a.name));
+
+                folderFilesMap.clear();
+                folderFileSelect.innerHTML = '';
+
+                reportFiles.forEach(file => {
+                    folderFilesMap.set(file.name, file);
+                    const opt = document.createElement('option');
+                    opt.value = file.name;
+                    opt.textContent = file.name;
+                    folderFileSelect.appendChild(opt);
+                });
+
+                fileNameDisplay.textContent = `Relatórios: Relatorios/ (${reportFiles.length} arquivos)`;
+                fileInfo.classList.remove('hidden');
+                fileInfo.classList.add('flex');
+                fileSelectorContainer.classList.remove('hidden');
+                fileSelectorContainer.classList.add('flex');
+
+                // Carrega automaticamente o arquivo mais recente
+                const latestFile = reportFiles[0];
+                folderFileSelect.value = latestFile.name;
+                await processGitHubFile(latestFile);
+
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao carregar os relatórios do repositório. Verifique sua conexão.');
+                loadReportsBtn.innerHTML = 'Tentar Novamente';
+            }
+        }
+
+        async function processGitHubFile(fileObj) {
+            try {
+                const res = await fetch(fileObj.download_url);
+                const arrayBuffer = await res.arrayBuffer();
+                
+                const data = new Uint8Array(arrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                parseMetaTraderReport(jsonRows, fileObj);
+            } catch (err) {
+                alert('Erro ao processar o arquivo: ' + fileObj.name);
+                console.error(err);
+            }
         }
 
         function parseMetaTraderReport(rows, file) {
@@ -361,8 +365,7 @@
             }
 
             if (!reportGeneratedTime) {
-                const modDate = file && file.lastModified ? new Date(file.lastModified) : new Date();
-                reportGeneratedTime = modDate.toLocaleString('pt-BR');
+                reportGeneratedTime = new Date().toLocaleString('pt-BR');
             }
 
             for (let i = 0; i < rows.length; i++) {
