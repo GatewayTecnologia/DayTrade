@@ -168,10 +168,10 @@
                 </div>
             </div>
 
-            <!-- Volume Chart Section (Full Width) -->
+            <!-- Volume Chart Section (Full Width with Dynamic Colors) -->
             <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md flex flex-col">
                 <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-bar text-sky-400"></i> Volume / Contratos por Operação (por Horário)
+                    <i class="fa-solid fa-chart-bar text-emerald-400"></i> Volume / Contratos por Operação (por Horário)
                 </h3>
                 <div class="relative h-64">
                     <canvas id="volumeChart"></canvas>
@@ -697,8 +697,11 @@
                 }
             });
 
-            // 4. Gráfico de Volume (Contratos por Operação)
+            // 4. Gráfico de Volume (Contratos por Operação com Cores Dinâmicas)
             const volumeData = trades.map(t => parseFloat(t.volume) || 0);
+            const volumeColors = trades.map(t => t.profit > 0 ? '#10b981' : '#f43f5e');
+            const volumeBgColors = trades.map(t => t.profit > 0 ? 'rgba(16, 185, 129, 0.6)' : 'rgba(244, 63, 94, 0.6)');
+
             const ctxVolume = document.getElementById('volumeChart').getContext('2d');
             if (volumeChartInstance) volumeChartInstance.destroy();
 
@@ -709,8 +712,8 @@
                     datasets: [{
                         label: 'Volume (Contratos)',
                         data: volumeData,
-                        backgroundColor: 'rgba(56, 189, 248, 0.6)',
-                        borderColor: '#38bdf8',
+                        backgroundColor: volumeBgColors,
+                        borderColor: volumeColors,
                         borderWidth: 1,
                         borderRadius: 4
                     }]
