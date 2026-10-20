@@ -44,11 +44,11 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-tight text-white">Gateway Tecnologia</h1>
-                    <p class="text-xs text-slate-400">Análise Avançada de Relatórios (Diretório Local)</p>
+                    <p class="text-xs text-slate-400">Análise Avançada de Relatórios (Diretório do Repositório)</p>
                 </div>
             </div>
             <div class="flex items-center gap-3 flex-wrap">
-                <!-- Nome do Ficheiro XML Atual -->
+                <!-- Informação do Ficheiro Ativo -->
                 <div id="fileInfo" class="hidden text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 flex items-center gap-2">
                     <i class="fa-solid fa-file-code text-emerald-400"></i>
                     <span id="fileNameDisplay">Ficheiro: --</span>
@@ -58,9 +58,9 @@
                     <i class="fa-solid fa-clock text-emerald-400"></i>
                     <span id="reportTimeDisplay">Gerado em: --/--/---- --:--:--</span>
                 </div>
-                <!-- Botão para Recarregar -->
+                <!-- Botão para Atualizar Lista -->
                 <button id="refreshBtn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 flex items-center gap-2 transition cursor-pointer text-xs">
-                    <i class="fa-solid fa-rotate text-emerald-400"></i> Atualizar Dados
+                    <i class="fa-solid fa-rotate text-emerald-400"></i> Atualizar Lista
                 </button>
             </div>
         </div>
@@ -69,26 +69,29 @@
     <!-- Main Container -->
     <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
 
-        <!-- Initial Configuration / Loading Section -->
+        <!-- Seleção de Ficheiros / Carregamento -->
         <section id="uploadSection" class="bg-cardBg border border-borderCol rounded-2xl p-8 text-center shadow-lg transition hover:border-emerald-500/50">
             <div class="max-w-md mx-auto space-y-4">
                 <div class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto text-emerald-400 text-2xl">
-                    <i class="fa-solid fa-file-arrow-down"></i>
+                    <i class="fa-solid fa-folder-open"></i>
                 </div>
                 <div>
-                    <h2 class="text-lg font-semibold text-white">Carregar Relatório XML</h2>
-                    <p class="text-xs text-slate-400 mt-1">Insira o nome do ficheiro XML localizado no mesmo diretório ou selecione-o manualmente caso necessário.</p>
+                    <h2 class="text-lg font-semibold text-white">Selecionar Relatório do Diretório</h2>
+                    <p class="text-xs text-slate-400 mt-1">Escolha um dos relatórios encontrados no diretório do servidor ou selecione um ficheiro local.</p>
                 </div>
                 
-                <div class="flex gap-2">
-                    <input type="text" id="xmlFileNameInput" value="191026.xml" placeholder="ex: 191026.xml" class="flex-grow bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
-                    <button id="loadXmlBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium px-4 py-2 rounded-xl cursor-pointer shadow-lg shadow-emerald-900/30 transition">
-                        Carregar
+                <!-- Dropdown preenchido automaticamente com os ficheiros da pasta -->
+                <div class="flex flex-col gap-2">
+                    <select id="xmlFileSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+                        <option value="">A carregar relatórios do diretório...</option>
+                    </select>
+                    <button id="loadSelectedBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium py-2.5 rounded-xl cursor-pointer shadow-lg shadow-emerald-900/30 transition">
+                        Carregar Relatório Selecionado
                     </button>
                 </div>
 
-                <div class="pt-2 border-t border-slate-800">
-                    <span class="text-[11px] text-slate-500 block mb-2">Ou selecione o ficheiro do computador:</span>
+                <div class="pt-3 border-t border-slate-800">
+                    <span class="text-[11px] text-slate-500 block mb-2">Ou escolha um ficheiro do seu computador:</span>
                     <label class="inline-block bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-medium px-4 py-2 rounded-xl cursor-pointer transition">
                         Procurar Ficheiro Local
                         <input type="file" id="localFileInput" accept=".xml,.xlsx,.xls,.csv" class="hidden">
@@ -227,19 +230,20 @@
         Gateway Tecnologia &copy; 2026 - Análise Automatizada de Relatórios
     </footer>
 
-    <!-- Script de Processamento Local -->
+    <!-- Script de Listagem Automática e Processamento -->
     <script>
         let equityChartInstance = null;
         let winLossChartInstance = null;
         let allTrades = [];
         let reportGeneratedTime = '';
+        let directoryFilesMap = new Map();
 
         const uploadSection = document.getElementById('uploadSection');
         const dashboardContent = document.getElementById('dashboardContent');
         const fileInfo = document.getElementById('fileInfo');
         const fileNameDisplay = document.getElementById('fileNameDisplay');
-        const xmlFileNameInput = document.getElementById('xmlFileNameInput');
-        const loadXmlBtn = document.getElementById('loadXmlBtn');
+        const xmlFileSelect = document.getElementById('xmlFileSelect');
+        const loadSelectedBtn = document.getElementById('loadSelectedBtn');
         const refreshBtn = document.getElementById('refreshBtn');
         const localFileInput = document.getElementById('localFileInput');
         
@@ -252,37 +256,96 @@
         const filterProfit = document.getElementById('filterProfit');
         const clearFiltersBtn = document.getElementById('clearFilters');
 
-        loadXmlBtn.addEventListener('click', () => loadFileFromPath(xmlFileNameInput.value.trim()));
-        refreshBtn.addEventListener('click', () => loadFileFromPath(xmlFileNameInput.value.trim()));
+        loadSelectedBtn.addEventListener('click', () => {
+            const selectedUrl = xmlFileSelect.value;
+            const selectedName = xmlFileSelect.options[xmlFileSelect.selectedIndex].text;
+            if (selectedUrl) {
+                loadFileFromUrl(selectedUrl, selectedName);
+            } else {
+                alert('Por favor, selecione um ficheiro da lista.');
+            }
+        });
+
+        refreshBtn.addEventListener('click', fetchDirectoryFiles);
 
         localFileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) processFileObject(file);
         });
 
-        // Tenta carregar automaticamente ao abrir a página com o nome padrão
+        // Carrega a lista de ficheiros do repositório ao abrir a página
         window.addEventListener('DOMContentLoaded', () => {
-            loadFileFromPath('ReportHistory.xml');
+            fetchDirectoryFiles();
         });
 
-        async function loadFileFromPath(filename) {
-            if (!filename) return;
-            loadXmlBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> A carregar...';
+        async function fetchDirectoryFiles() {
+            xmlFileSelect.innerHTML = '<option value="">A procurar ficheiros no diretório...</option>';
+            const apiUrl = 'https://api.github.com/repos/GatewayTecnologia/DayTrade/contents';
 
             try {
-                // Caminho relativo direto para o mesmo diretório do index.html
-                const response = await fetch(`./${filename}`);
-                if (!response.ok) throw new Error('Ficheiro não encontrado no diretório.');
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('Erro ao aceder à API do repositório.');
+                
+                const filesData = await response.json();
+                const validExtensions = ['.xml', '.xlsx', '.xls', '.csv'];
+                
+                const reportFiles = filesData.filter(file => {
+                    if (file.type !== 'file') return false;
+                    const lowerName = file.name.toLowerCase();
+                    return validExtensions.some(ext => lowerName.endsWith(ext));
+                });
+
+                xmlFileSelect.innerHTML = '';
+                directoryFilesMap.clear();
+
+                if (reportFiles.length === 0) {
+                    xmlFileSelect.innerHTML = '<option value="">Nenhum ficheiro XML/XLSX encontrado no diretório</option>';
+                    return;
+                }
+
+                // Ordenar por nome (mais recente primeiro)
+                reportFiles.sort((a, b) => b.name.localeCompare(a.name));
+
+                reportFiles.forEach((file, index) => {
+                    directoryFilesMap.set(file.download_url, file.name);
+                    const opt = document.createElement('option');
+                    opt.value = file.download_url;
+                    opt.textContent = file.name;
+                    if (index === 0) opt.selected = true;
+                    xmlFileSelect.appendChild(opt);
+                });
+
+                // Carrega automaticamente o primeiro ficheiro da lista
+                if (reportFiles.length > 0) {
+                    loadFileFromUrl(reportFiles[0].download_url, reportFiles[0].name);
+                }
+
+            } catch (err) {
+                console.warn('Falha na API do GitHub, a usar fallback local...', err);
+                // Fallback caso a API falhe
+                xmlFileSelect.innerHTML = '';
+                const defaultOpt = document.createElement('option');
+                defaultOpt.value = './ReportHistory.xml';
+                defaultOpt.textContent = 'ReportHistory.xml (Local)';
+                xmlFileSelect.appendChild(defaultOpt);
+                
+                loadFileFromUrl('./ReportHistory.xml', 'ReportHistory.xml');
+            }
+        }
+
+        async function loadFileFromUrl(url, filename) {
+            loadSelectedBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> A carregar...';
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Não foi possível descarregar o ficheiro.');
                 
                 const arrayBuffer = await response.arrayBuffer();
                 processArrayBuffer(arrayBuffer, filename);
             } catch (err) {
-                console.warn('Tentativa com fetch falhou, tente selecionar localmente.', err);
-                loadXmlBtn.innerHTML = 'Carregar';
-                if (uploadSection.classList.contains('hidden')) {
-                    // Se já estiver no dashboard, avisa discretamente
-                    alert(`Não foi possível encontrar o ficheiro "${filename}" no diretório local. Verifique o nome.`);
-                }
+                console.error(err);
+                alert(`Erro ao carregar o ficheiro "${filename}". Verifique se o mesmo existe no diretório.`);
+                loadSelectedBtn.innerHTML = 'Carregar Relatório Selecionado';
             }
         }
 
@@ -306,7 +369,7 @@
             } catch (err) {
                 alert('Erro ao processar o formato do ficheiro: ' + filename);
                 console.error(err);
-                loadXmlBtn.innerHTML = 'Carregar';
+                loadSelectedBtn.innerHTML = 'Carregar Relatório Selecionado';
             }
         }
 
@@ -420,7 +483,7 @@
             fileNameDisplay.textContent = `Ficheiro: ${fileName}`;
             fileInfo.classList.remove('hidden');
             fileInfo.classList.add('flex');
-            loadXmlBtn.innerHTML = 'Carregar';
+            loadSelectedBtn.innerHTML = 'Carregar Relatório Selecionado';
 
             renderDashboard();
         }
