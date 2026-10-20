@@ -80,7 +80,7 @@
                     <p class="text-xs text-slate-400 mt-1">Escolha o relatório pretendido na lista abaixo e clique em carregar.</p>
                 </div>
                 
-                <!-- Dropdown preenchido com os ficheiros, sem carregar automaticamente -->
+                <!-- Dropdown preenchido com os ficheiros -->
                 <div class="flex flex-col gap-2">
                     <select id="xmlFileSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
                         <option value="">A procurar ficheiros no diretório...</option>
@@ -168,16 +168,8 @@
                         <button id="clearFilters" class="text-xs text-slate-400 hover:text-emerald-400 transition underline cursor-pointer">Limpar Filtros</button>
                     </div>
                     
-                    <!-- Advanced Filters Grid -->
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 pt-2 border-t border-slate-800">
-                        <div>
-                            <label class="block text-[10px] text-slate-400 uppercase font-medium mb-1">Data</label>
-                            <input type="text" id="filterDate" placeholder="Filtrar data..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] text-slate-400 uppercase font-medium mb-1">Hora</label>
-                            <input type="text" id="filterTime" placeholder="Filtrar hora..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
-                        </div>
+                    <!-- Advanced Filters Grid (Apenas para as colunas visíveis) -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-800">
                         <div>
                             <label class="block text-[10px] text-slate-400 uppercase font-medium mb-1">Tipo</label>
                             <input type="text" id="filterType" placeholder="Filtrar tipo..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
@@ -191,10 +183,6 @@
                             <input type="text" id="filterVolume" placeholder="Volume..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
                         </div>
                         <div>
-                            <label class="block text-[10px] text-slate-400 uppercase font-medium mb-1">Preço</label>
-                            <input type="text" id="filterPrice" placeholder="Preço..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
-                        </div>
-                        <div>
                             <label class="block text-[10px] text-slate-400 uppercase font-medium mb-1">Lucro (R$)</label>
                             <input type="text" id="filterProfit" placeholder="Lucro..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
                         </div>
@@ -205,12 +193,9 @@
                     <table class="w-full text-left text-xs text-slate-300">
                         <thead class="bg-slate-900/80 text-slate-400 sticky top-0 uppercase tracking-wider font-semibold border-b border-borderCol">
                             <tr>
-                                <th class="py-3 px-4">Ticket / ID</th>
-                                <th class="py-3 px-4">Data / Hora</th>
                                 <th class="py-3 px-4">Tipo</th>
                                 <th class="py-3 px-4">Ativo</th>
                                 <th class="py-3 px-4">Volume</th>
-                                <th class="py-3 px-4 text-right">Preço</th>
                                 <th class="py-3 px-4 text-right">Lucro (R$)</th>
                             </tr>
                         </thead>
@@ -230,7 +215,7 @@
         Gateway Tecnologia &copy; 2026 - Análise Automatizada de Relatórios
     </footer>
 
-    <!-- Script de Listagem sem Auto-Load -->
+    <!-- Script Atualizado -->
     <script>
         let equityChartInstance = null;
         let winLossChartInstance = null;
@@ -247,12 +232,9 @@
         const backToSelectionBtn = document.getElementById('backToSelectionBtn');
         const localFileInput = document.getElementById('localFileInput');
         
-        const filterDate = document.getElementById('filterDate');
-        const filterTime = document.getElementById('filterTime');
         const filterType = document.getElementById('filterType');
         const filterAsset = document.getElementById('filterAsset');
         const filterVolume = document.getElementById('filterVolume');
-        const filterPrice = document.getElementById('filterPrice');
         const filterProfit = document.getElementById('filterProfit');
         const clearFiltersBtn = document.getElementById('clearFilters');
 
@@ -279,7 +261,6 @@
             if (file) processFileObject(file);
         });
 
-        // Apenas carrega a lista de ficheiros ao abrir, sem carregar o conteúdo automaticamente
         window.addEventListener('DOMContentLoaded', () => {
             fetchDirectoryFiles();
         });
@@ -309,7 +290,6 @@
                     return;
                 }
 
-                // Ordenar por nome (mais recente primeiro)
                 reportFiles.sort((a, b) => b.name.localeCompare(a.name));
 
                 reportFiles.forEach((file) => {
@@ -528,7 +508,7 @@
             tbody.innerHTML = '';
 
             if (trades.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-500">Nenhuma operação encontrada com os filtros informados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-500">Nenhuma operação encontrada com os filtros informados.</td></tr>`;
                 return;
             }
 
@@ -537,12 +517,9 @@
                 tr.className = 'hover:bg-slate-800/50 transition';
                 const isProfit = t.profit >= 0;
                 tr.innerHTML = `
-                    <td class="py-3 px-4 font-mono text-slate-400">${t.ticket}</td>
-                    <td class="py-3 px-4">${t.dateTime}</td>
                     <td class="py-3 px-4 uppercase font-semibold text-xs ${String(t.type).toLowerCase().includes('buy') || String(t.type).toLowerCase().includes('compra') ? 'text-emerald-400' : 'text-rose-400'}">${t.type}</td>
                     <td class="py-3 px-4 font-semibold text-white">${t.symbol}</td>
                     <td class="py-3 px-4">${t.volume}</td>
-                    <td class="py-3 px-4 text-right font-mono">${t.price}</td>
                     <td class="py-3 px-4 text-right font-mono font-bold ${isProfit ? 'text-emerald-400' : 'text-rose-400'}">
                         ${isProfit ? '+' : ''}${t.profit.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
                     </td>
@@ -552,40 +529,31 @@
         }
 
         function applyColumnFilters() {
-            const dVal = filterDate.value.toLowerCase();
-            const tVal = filterTime.value.toLowerCase();
             const typeVal = filterType.value.toLowerCase();
             const aVal = filterAsset.value.toLowerCase();
             const vVal = filterVolume.value.toLowerCase();
-            const pVal = filterPrice.value.toLowerCase();
             const profVal = filterProfit.value.toLowerCase();
 
             const filtered = allTrades.filter(t => {
-                const matchDate = t.date.toLowerCase().includes(dVal);
-                const matchTime = t.time.toLowerCase().includes(tVal);
                 const matchType = String(t.type).toLowerCase().includes(typeVal);
                 const matchAsset = String(t.symbol).toLowerCase().includes(aVal);
                 const matchVolume = String(t.volume).toLowerCase().includes(vVal);
-                const matchPrice = String(t.price).toLowerCase().includes(pVal);
                 const matchProfit = String(t.profit).toLowerCase().includes(profVal);
 
-                return matchDate && matchTime && matchType && matchAsset && matchVolume && matchPrice && matchProfit;
+                return matchType && matchAsset && matchVolume && matchProfit;
             });
 
             populateTable(filtered);
         }
 
-        [filterDate, filterTime, filterType, filterAsset, filterVolume, filterPrice, filterProfit].forEach(input => {
+        [filterType, filterAsset, filterVolume, filterProfit].forEach(input => {
             input.addEventListener('input', applyColumnFilters);
         });
 
         clearFiltersBtn.addEventListener('click', () => {
-            filterDate.value = '';
-            filterTime.value = '';
             filterType.value = '';
             filterAsset.value = '';
             filterVolume.value = '';
-            filterPrice.value = '';
             filterProfit.value = '';
             applyColumnFilters();
         });
