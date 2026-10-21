@@ -66,7 +66,7 @@
 
                 <!-- Redes Sociais -->
                 <div class="flex items-center gap-1.5 pl-2 border-l border-slate-700">
-                    <a href="https://instagram.com/gatewaytecnologia" target="_blank" rel="noopener noreferrer" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-slate-300 hover:text-emerald-400 transition" title="Instagram">
+                    <a href="https://instagram.comgatewaytecnologia" target="_blank" rel="noopener noreferrer" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-slate-300 hover:text-emerald-400 transition" title="Instagram">
                         <i class="fa-brands fa-instagram text-sm"></i>
                     </a>
                     <a href="https://whatsapp.com/channel/0029VbBA9XrCBtxOPNcSY43y" target="_blank" rel="noopener noreferrer" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-slate-300 hover:text-emerald-400 transition" title="Canal do WhatsApp">
@@ -157,10 +157,10 @@
                     </div>
                 </div>
                 <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md">
-                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Maior Drawdown</p>
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Maior Drawdown Diário</p>
                     <p id="kpiMaxDrawdown" class="text-2xl font-bold mt-2 text-rose-400">R$ 0,00</p>
                     <div class="mt-2 text-xs text-slate-400">
-                        Pior rebaixamento de capital
+                        Pior rebaixamento em um único dia
                     </div>
                 </div>
                 <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md">
@@ -197,7 +197,7 @@
             <!-- Drawdown Chart Section (Full Width) -->
             <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md flex flex-col">
                 <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-line text-rose-400"></i> Drawdown (Rebaixamento de Capital por Horário)
+                    <i class="fa-solid fa-chart-line text-rose-400"></i> Drawdown Diário (Rebaixamento Intradia)
                 </h3>
                 <div class="relative h-64">
                     <canvas id="drawdownChart"></canvas>
@@ -453,7 +453,6 @@
             reportAccount = '';
             reportCompany = '';
 
-            // Varredura flexível das primeiras 30 linhas para extrair metadados do cabeçalho
             for (let i = 0; i < Math.min(rows.length, 30); i++) {
                 const row = rows[i];
                 if (!row || row.length === 0) continue;
@@ -637,6 +636,48 @@
             renderDashboard();
         }
 
+        // Função auxiliar para calcular o Drawdown por Dia
+        function calculateDailyDrawdowns(trades) {
+            const dailyGroups = {};
+            trades.forEach(t => {
+                let dayKey = t.date || 'Desconhecido';
+                if (!dailyGroups[dayKey]) dailyGroups[dayKey] = [];
+                dailyGroups[dayKey].push(t);
+            });
+
+            let maxDailyDrawdown = 0;
+            const drawdownSeries = [];
+
+            Object.keys(dailyGroups).forEach(day => {
+                let dayPeak = 0;
+                let dayCumulative = 0;
+                let worstDayDrawdown = 0;
+
+                dailyGroups[day].forEach(t => {
+                    dayCumulative += t.profit;
+                    if (dayCumulative > dayPeak) {
+                        dayPeak = dayCumulative;
+                    }
+                    let currentDD = dayCumulative - dayPeak;
+                    drawdownSeries.push({
+                        time: t.time || t.dateTime,
+                        date: day,
+                        drawdown: currentDD
+                    });
+
+                    if (currentDD < worstDayDrawdown) {
+                        worstDayDrawdown = currentDD;
+                    }
+                });
+
+                if (worstDayDrawdown < maxDailyDrawdown) {
+                    maxDailyDrawdown = worstDayDrawdown;
+                }
+            });
+
+            return { maxDailyDrawdown, drawdownSeries };
+        }
+
         function renderDashboard() {
             uploadSection.classList.add('hidden');
             dashboardContent.classList.remove('hidden');
@@ -659,20 +700,8 @@
             let maxProfit = wins.length > 0 ? Math.max(...wins.map(t => t.profit)) : 0;
             let maxLoss = losses.length > 0 ? Math.min(...losses.map(t => t.profit)) : 0;
 
-            // Cálculo do Maior Drawdown
-            let peak = 0;
-            let runCumulative = 0;
-            let maxDrawdown = 0;
-            allTrades.forEach(t => {
-                runCumulative += t.profit;
-                if (runCumulative > peak) {
-                    peak = runCumulative;
-                }
-                let dd = runCumulative - peak;
-                if (dd < maxDrawdown) {
-                    maxDrawdown = dd;
-                }
-            });
+            // Cálculo do Maior Drawdown Diário
+            const { maxDailyDrawdown } = calculateDailyDrawdowns(allTrades);
 
             document.getElementById('kpiNetProfit').textContent = `R$ ${netProfit.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('kpiNetProfit').className = `text-2xl font-bold mt-2 ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
@@ -681,7 +710,7 @@
             document.getElementById('kpiWinCount').textContent = `${wins.length} Acertos`;
             document.getElementById('kpiLossCount').textContent = `${losses.length} Erros`;
             document.getElementById('kpiWinRate').textContent = `${winRate.toFixed(1)}%`;
-            document.getElementById('kpiMaxDrawdown').textContent = `R$ ${maxDrawdown.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpiMaxDrawdown').textContent = `R$ ${maxDailyDrawdown.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('kpiMaxProfit').textContent = `R$ ${maxProfit.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('kpiMaxLoss').textContent = `R$ ${maxLoss.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
 
@@ -814,16 +843,8 @@
                 }
             });
 
-            // 3. Gráfico de Drawdown
-            let peak = 0;
-            let runCumulative = 0;
-            const drawdownData = trades.map(t => {
-                runCumulative += t.profit;
-                if (runCumulative > peak) {
-                    peak = runCumulative;
-                }
-                return runCumulative - peak;
-            });
+            // 3. Gráfico de Drawdown Diário
+            const { drawdownSeries } = calculateDailyDrawdowns(trades);
 
             const ctxDrawdown = document.getElementById('drawdownChart').getContext('2d');
             if (drawdownChartInstance) drawdownChartInstance.destroy();
@@ -831,10 +852,10 @@
             drawdownChartInstance = new Chart(ctxDrawdown, {
                 type: 'line',
                 data: {
-                    labels: trades.map(t => t.time || ''),
+                    labels: drawdownSeries.map(d => d.time || ''),
                     datasets: [{
-                        label: 'Drawdown (R$)',
-                        data: drawdownData,
+                        label: 'Drawdown Intradia (R$)',
+                        data: drawdownSeries.map(d => d.drawdown),
                         borderColor: '#f43f5e',
                         backgroundColor: 'rgba(244, 63, 94, 0.15)',
                         borderWidth: 2,
