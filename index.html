@@ -103,8 +103,8 @@
         <!-- Dashboard Content -->
         <div id="dashboardContent" class="hidden space-y-6">
 
-            <!-- KPI Summary Cards[cite: 1] -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- KPI Summary Cards (5 Colunas: Lucro, Operações, WinRate, Drawdown, Maior Operação) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md">
                     <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Lucro Líquido Total</p>
                     <p id="kpiNetProfit" class="text-2xl font-bold mt-2 text-white">R$ 0,00</p>
@@ -125,6 +125,14 @@
                     <p id="kpiWinRate" class="text-2xl font-bold mt-2 text-white">0.0%</p>
                     <div class="mt-2 text-xs text-slate-400">
                         Baseado no histórico de posições
+                    </div>
+                </div>
+                <!-- Nova Janela de Drawdown inserida entre Taxa de Acerto e Maior Operação -->
+                <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md">
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Maior Drawdown</p>
+                    <p id="kpiMaxDrawdown" class="text-2xl font-bold mt-2 text-rose-400">R$ 0,00</p>
+                    <div class="mt-2 text-xs text-slate-400">
+                        Pior rebaixamento de capital
                     </div>
                 </div>
                 <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md">
@@ -168,7 +176,7 @@
                 </div>
             </div>
 
-            <!-- Volume Chart Section (Full Width with Values on Top of Bars) -->
+            <!-- Volume Chart Section (Full Width with Dynamic Colors & Top Values) -->
             <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md flex flex-col">
                 <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
                     <i class="fa-solid fa-chart-bar text-emerald-400"></i> Volume / Contratos por Operação (por Horário)
@@ -511,6 +519,21 @@
             let maxProfit = wins.length > 0 ? Math.max(...wins.map(t => t.profit)) : 0;
             let maxLoss = losses.length > 0 ? Math.min(...losses.map(t => t.profit)) : 0;
 
+            // Cálculo do Maior Drawdown (menor valor negativo)
+            let peak = 0;
+            let runCumulative = 0;
+            let maxDrawdown = 0;
+            allTrades.forEach(t => {
+                runCumulative += t.profit;
+                if (runCumulative > peak) {
+                    peak = runCumulative;
+                }
+                let dd = runCumulative - peak;
+                if (dd < maxDrawdown) {
+                    maxDrawdown = dd;
+                }
+            });
+
             document.getElementById('kpiNetProfit').textContent = `R$ ${netProfit.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('kpiNetProfit').className = `text-2xl font-bold mt-2 ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
             document.getElementById('kpiProfitFactor').textContent = `Fator: ${profitFactor}`;
@@ -518,6 +541,7 @@
             document.getElementById('kpiWinCount').textContent = `${wins.length} Acertos`;
             document.getElementById('kpiLossCount').textContent = `${losses.length} Erros`;
             document.getElementById('kpiWinRate').textContent = `${winRate.toFixed(1)}%`;
+            document.getElementById('kpiMaxDrawdown').textContent = `R$ ${maxDrawdown.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('kpiMaxProfit').textContent = `R$ ${maxProfit.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('kpiMaxLoss').textContent = `R$ ${maxLoss.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
 
@@ -697,7 +721,7 @@
                 }
             });
 
-            // 4. Gráfico de Volume com Valores no Topo das Barras
+            // 4. Gráfico de Volume com Cores Dinâmicas e Valores no Topo
             const volumeData = trades.map(t => parseFloat(t.volume) || 0);
             const volumeColors = trades.map(t => t.profit > 0 ? '#10b981' : '#f43f5e');
             const volumeBgColors = trades.map(t => t.profit > 0 ? 'rgba(16, 185, 129, 0.6)' : 'rgba(244, 63, 94, 0.6)');
@@ -731,7 +755,7 @@
                         y: { 
                             grid: { color: '#334155' }, 
                             ticks: { color: '#94a3b8', precision: 0 },
-                            suggestedMax: maxVol * 1.3 // Espaço extra para exibir o texto no topo das barras
+                            suggestedMax: maxVol * 1.3
                         }
                     }
                 },
