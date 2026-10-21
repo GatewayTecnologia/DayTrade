@@ -35,9 +35,10 @@
 </head>
 <body class="bg-darkBg text-slate-100 min-h-screen flex flex-col relative">
 
-    <!-- Header com o Logotipo no Canto Superior Esquerdo -->
+    <!-- Header com Logotipo à esquerda e Redes Sociais no Canto Superior Direito -->
     <header class="bg-cardBg border-b border-borderCol py-4 px-6 shadow-md">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <!-- Esquerda: Logotipo e Título -->
             <div class="flex items-center space-x-3">
                 <img src="01.jpeg" alt="Logotipo" class="w-11 h-11 object-cover rounded-xl border border-emerald-500/30 shadow-md">
                 <div>
@@ -45,6 +46,8 @@
                     <p class="text-xs text-slate-400">Análise Avançada de Relatórios (Diretório do Repositório)</p>
                 </div>
             </div>
+
+            <!-- Direita: Informações de Ficheiro, Carimbo, Botões e Redes Sociais -->
             <div class="flex items-center gap-3 flex-wrap">
                 <!-- Informação do Ficheiro Ativo -->
                 <div id="fileInfo" class="hidden text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 flex items-center gap-2">
@@ -60,6 +63,19 @@
                 <button id="backToSelectionBtn" class="hidden bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 flex items-center gap-2 transition cursor-pointer text-xs">
                     <i class="fa-solid fa-folder-open text-emerald-400"></i> Escolher Outro Ficheiro
                 </button>
+
+                <!-- Redes Sociais (Instagram, Canal do WhatsApp e X) -->
+                <div class="flex items-center gap-1.5 pl-2 border-l border-slate-700">
+                    <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-slate-300 hover:text-emerald-400 transition" title="Instagram">
+                        <i class="fa-brands fa-instagram text-sm"></i>
+                    </a>
+                    <a href="https://whatsapp.com/channel/..." target="_blank" rel="noopener noreferrer" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-slate-300 hover:text-emerald-400 transition" title="Canal do WhatsApp">
+                        <i class="fa-brands fa-whatsapp text-sm"></i>
+                    </a>
+                    <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-slate-300 hover:text-emerald-400 transition" title="X (Twitter)">
+                        <i class="fa-brands fa-x-twitter text-sm"></i>
+                    </a>
+                </div>
             </div>
         </div>
     </header>
@@ -246,13 +262,12 @@
     </main>
 
     <!-- Botão Flutuante de Suporte por WhatsApp -->
-    <a href="https://wa.me/5511961264161?text=Olá,%2520preciso%2520de%2520suporte%2520com%2520o%2520relatório%2520de%2520performance." 
+    <a href="https://wa.me/5511999999999?text=Olá,%2520preciso%2520de%2520suporte%2520com%2520o%2520relatório%2520de%2520performance." 
        target="_blank" 
        rel="noopener noreferrer" 
        class="fixed bottom-6 right-6 z-50 bg-emerald-500 hover:bg-emerald-400 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition transform hover:scale-110 cursor-pointer group"
        title="Suporte por WhatsApp">
         <i class="fa-brands fa-whatsapp text-2xl"></i>
-        <!-- Tooltip opcional -->
         <span class="absolute right-16 bg-slate-900 text-slate-200 text-[11px] font-medium py-1 px-3 rounded-lg shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none border border-slate-700">
             Fale connosco no WhatsApp
         </span>
@@ -263,7 +278,7 @@
         Gateway Tecnologia &copy; 2026 - Análise Automatizada de Relatórios
     </footer>
 
-    <!-- Script Atualizado -->
+    <!-- Script Completo -->
     <script>
         let equityChartInstance = null;
         let winLossChartInstance = null;
