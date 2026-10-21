@@ -35,7 +35,7 @@
 </head>
 <body class="bg-darkBg text-slate-100 min-h-screen flex flex-col relative">
 
-    <!-- Header com Logotipo à esquerda e Redes Sociais no Canto Superior Direito -->
+    <!-- Header com Logotipo, Informações do XML e Redes Sociais -->
     <header class="bg-cardBg border-b border-borderCol py-4 px-6 shadow-md">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <!-- Esquerda: Logotipo e Título -->
@@ -43,34 +43,52 @@
                 <img src="01.jpeg" alt="Logotipo" class="w-11 h-11 object-cover rounded-xl border border-emerald-500/30 shadow-md">
                 <div>
                     <h1 class="text-xl font-bold tracking-tight text-white">Gateway Tecnologia</h1>
-                    <p class="text-xs text-slate-400">Análise Avançada de Relatórios (Diretório do Repositório)</p>
+                    <p class="text-xs text-slate-400">Análise Avançada de Relatórios</p>
                 </div>
             </div>
 
-            <!-- Direita: Informações de Ficheiro, Carimbo, Botões e Redes Sociais -->
-            <div class="flex items-center gap-3 flex-wrap">
+            <!-- Centro/Direita: Metadados do XML (Nome, Conta, Empresa, Data/Hora) -->
+            <div class="flex items-center gap-2 flex-wrap text-xs">
                 <!-- Informação do Ficheiro Ativo -->
-                <div id="fileInfo" class="hidden text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 flex items-center gap-2">
+                <div id="fileInfo" class="hidden bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 items-center gap-2">
                     <i class="fa-solid fa-file-code text-emerald-400"></i>
                     <span id="fileNameDisplay">Ficheiro: --</span>
                 </div>
-                <!-- Carimbo de Data e Hora -->
-                <div id="reportTimestamp" class="hidden text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 items-center gap-2">
+                <!-- Nome do Trader -->
+                <div id="xmlNameInfo" class="hidden bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 items-center gap-2">
+                    <i class="fa-solid fa-user text-emerald-400"></i>
+                    <span id="xmlNameDisplay">Nome: --</span>
+                </div>
+                <!-- Conta -->
+                <div id="xmlAccountInfo" class="hidden bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 items-center gap-2">
+                    <i class="fa-solid fa-id-card text-emerald-400"></i>
+                    <span id="xmlAccountDisplay">Conta: --</span>
+                </div>
+                <!-- Empresa -->
+                <div id="xmlCompanyInfo" class="hidden bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 items-center gap-2">
+                    <i class="fa-solid fa-building text-emerald-400"></i>
+                    <span id="xmlCompanyDisplay">Empresa: --</span>
+                </div>
+                <!-- Carimbo de Data e Hora do XML -->
+                <div id="reportTimestamp" class="hidden bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 items-center gap-2">
                     <i class="fa-solid fa-clock text-emerald-400"></i>
-                    <span id="reportTimeDisplay">Gerado em: --/--/---- --:--:--</span>
+                    <span id="reportTimeDisplay">Gerado em: --</span>
                 </div>
                 <!-- Botão para Voltar ao Menu de Seleção -->
                 <button id="backToSelectionBtn" class="hidden bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 flex items-center gap-2 transition cursor-pointer text-xs">
-                    <i class="fa-solid fa-folder-open text-emerald-400"></i> Escolher Outro Ficheiro
+                    <i class="fa-solid fa-folder-open text-emerald-400"></i> Outro Ficheiro
                 </button>
 
-                <!-- Redes Sociais (Instagram, Canal do WhatsApp e X) -->
+                <!-- Redes Sociais -->
                 <div class="flex items-center gap-1.5 pl-2 border-l border-slate-700">
-                    <a href="https://instagram.com/gatewaytecnologia" target="_blank" rel="noopener noreferrer" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-slate-300 hover:text-emerald-400 transition" title="Instagram">
+                    <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-slate-300 hover:text-emerald-400 transition" title="Instagram">
                         <i class="fa-brands fa-instagram text-sm"></i>
                     </a>
-                    <a href="https://whatsapp.com/channel/0029VbBA9XrCBtxOPNcSY43y" target="_blank" rel="noopener noreferrer" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-slate-300 hover:text-emerald-400 transition" title="Canal do WhatsApp">
+                    <a href="https://whatsapp.com/channel/..." target="_blank" rel="noopener noreferrer" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-slate-300 hover:text-emerald-400 transition" title="Canal do WhatsApp">
                         <i class="fa-brands fa-whatsapp text-sm"></i>
+                    </a>
+                    <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg flex items-center justify-center text-slate-300 hover:text-emerald-400 transition" title="X (Twitter)">
+                        <i class="fa-brands fa-x-twitter text-sm"></i>
                     </a>
                 </div>
             </div>
@@ -275,7 +293,7 @@
         Gateway Tecnologia &copy; 2026 - Análise Automatizada de Relatórios
     </footer>
 
-    <!-- Script Completo -->
+    <!-- Script Atualizado -->
     <script>
         let equityChartInstance = null;
         let winLossChartInstance = null;
@@ -284,12 +302,22 @@
         let volumeChartInstance = null;
         let allTrades = [];
         let reportGeneratedTime = '';
+        let reportName = '';
+        let reportAccount = '';
+        let reportCompany = '';
         let directoryFilesMap = new Map();
 
         const uploadSection = document.getElementById('uploadSection');
         const dashboardContent = document.getElementById('dashboardContent');
         const fileInfo = document.getElementById('fileInfo');
         const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const xmlNameInfo = document.getElementById('xmlNameInfo');
+        const xmlNameDisplay = document.getElementById('xmlNameDisplay');
+        const xmlAccountInfo = document.getElementById('xmlAccountInfo');
+        const xmlAccountDisplay = document.getElementById('xmlAccountDisplay');
+        const xmlCompanyInfo = document.getElementById('xmlCompanyInfo');
+        const xmlCompanyDisplay = document.getElementById('xmlCompanyDisplay');
+        
         const xmlFileSelect = document.getElementById('xmlFileSelect');
         const loadSelectedBtn = document.getElementById('loadSelectedBtn');
         const backToSelectionBtn = document.getElementById('backToSelectionBtn');
@@ -315,6 +343,9 @@
             dashboardContent.classList.add('hidden');
             uploadSection.classList.remove('hidden');
             fileInfo.classList.add('hidden');
+            xmlNameInfo.classList.add('hidden');
+            xmlAccountInfo.classList.add('hidden');
+            xmlCompanyInfo.classList.add('hidden');
             backToSelectionBtn.classList.add('hidden');
             document.getElementById('reportTimestamp').classList.add('hidden');
         });
@@ -417,27 +448,48 @@
             allTrades = [];
             let inPositionsSection = false;
             reportGeneratedTime = '';
+            reportName = '';
+            reportAccount = '';
+            reportCompany = '';
 
-            for (let i = 0; i < Math.min(rows.length, 15); i++) {
+            // Varredura das primeiras linhas para extrair metadados do cabeçalho
+            for (let i = 0; i < Math.min(rows.length, 25); i++) {
                 const row = rows[i];
                 if (!row || row.length === 0) continue;
-                const rowStr = row.map(c => String(c).trim()).join(' ');
+                
+                let rowJoined = row.map(c => String(c).trim()).join(' | ');
+                let rowStrLower = rowJoined.toLowerCase();
 
-                if (rowStr.toLowerCase().includes('gerado') || rowStr.toLowerCase().includes('data') || rowStr.toLowerCase().includes('date') || rowStr.toLowerCase().includes('relatório') || /\d{4}[./-]\d{2}[./-]\d{2}/.test(rowStr)) {
+                // Procura por Data/Hora de Geração
+                if (!reportGeneratedTime && (rowStrLower.includes('gerado') || rowStrLower.includes('data') || rowStrLower.includes('date') || rowStrLower.includes('relatório'))) {
                     for (let cell of row) {
                         let cellStr = String(cell).trim();
-                        if (/\d{4}[./-]\d{2}[./-]\d{2}/.test(cellStr)) {
+                        if (/\d{4}[./-]\d{2}[./-]\d{2}/.test(cellStr) || /\d{2}[./-]\d{2}[./-]\d{4}/.test(cellStr)) {
                             reportGeneratedTime = cellStr;
                             break;
                         }
                     }
-                    if (!reportGeneratedTime && /\d{4}[./-]\d{2}[./-]\d{2}/.test(rowStr)) {
-                        reportGeneratedTime = rowStr;
-                        break;
+                }
+
+                // Procura por Nome / Account / Company nas linhas iniciais
+                for (let j = 0; j < row.length; j++) {
+                    let val = String(row[j] || '').trim();
+                    let valLower = val.toLowerCase();
+                    let nextVal = String(row[j + 1] || '').trim();
+
+                    if ((valLower === 'nome:' || valLower === 'name:' || valLower === 'cliente:') && nextVal) {
+                        reportName = nextVal;
+                    }
+                    if ((valLower === 'conta:' || valLower === 'account:' || valLower === 'login:') && nextVal) {
+                        reportAccount = nextVal;
+                    }
+                    if ((valLower === 'empresa:' || valLower === 'company:' || valLower === 'broker:') && nextVal) {
+                        reportCompany = nextVal;
                     }
                 }
             }
 
+            // Fallback para Data/Hora caso não venha explícita no cabeçalho
             if (!reportGeneratedTime) {
                 reportGeneratedTime = new Date().toLocaleString('pt-PT');
             }
@@ -520,9 +572,27 @@
                 });
             }
 
+            // Atualiza os elementos visuais do cabeçalho
             fileNameDisplay.textContent = `Ficheiro: ${fileName}`;
             fileInfo.classList.remove('hidden');
             fileInfo.classList.add('flex');
+
+            if (reportName) {
+                xmlNameDisplay.textContent = `Nome: ${reportName}`;
+                xmlNameInfo.classList.remove('hidden');
+                xmlNameInfo.classList.add('flex');
+            }
+            if (reportAccount) {
+                xmlAccountDisplay.textContent = `Conta: ${reportAccount}`;
+                xmlAccountInfo.classList.remove('hidden');
+                xmlAccountInfo.classList.add('flex');
+            }
+            if (reportCompany) {
+                xmlCompanyDisplay.textContent = `Empresa: ${reportCompany}`;
+                xmlCompanyInfo.classList.remove('hidden');
+                xmlCompanyInfo.classList.add('flex');
+            }
+
             backToSelectionBtn.classList.remove('hidden');
             backToSelectionBtn.classList.add('flex');
             loadSelectedBtn.innerHTML = 'Carregar Relatório Selecionado';
