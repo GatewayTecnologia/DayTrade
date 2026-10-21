@@ -35,7 +35,7 @@
 </head>
 <body class="bg-darkBg text-slate-100 min-h-screen flex flex-col relative">
 
-    <!-- Header com Logotipo, Informações do XML e Redes Sociais -->
+    <!-- Header Limpo (Apenas Logotipo, Ficheiro Ativo, Data/Hora, Botão e Redes Sociais) -->
     <header class="bg-cardBg border-b border-borderCol py-4 px-6 shadow-md">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <!-- Esquerda: Logotipo e Título -->
@@ -47,27 +47,12 @@
                 </div>
             </div>
 
-            <!-- Centro/Direita: Metadados do XML (Nome, Conta, Empresa, Data/Hora) -->
+            <!-- Direita: Contratos e Redes Sociais -->
             <div class="flex items-center gap-2 flex-wrap text-xs">
                 <!-- Informação do Ficheiro Ativo -->
                 <div id="fileInfo" class="hidden bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 items-center gap-2">
                     <i class="fa-solid fa-file-code text-emerald-400"></i>
                     <span id="fileNameDisplay">Ficheiro: --</span>
-                </div>
-                <!-- Nome do Trader -->
-                <div id="xmlNameInfo" class="hidden bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 items-center gap-2">
-                    <i class="fa-solid fa-user text-emerald-400"></i>
-                    <span id="xmlNameDisplay">Nome: --</span>
-                </div>
-                <!-- Conta -->
-                <div id="xmlAccountInfo" class="hidden bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 items-center gap-2">
-                    <i class="fa-solid fa-id-card text-emerald-400"></i>
-                    <span id="xmlAccountDisplay">Conta: --</span>
-                </div>
-                <!-- Empresa -->
-                <div id="xmlCompanyInfo" class="hidden bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 items-center gap-2">
-                    <i class="fa-solid fa-building text-emerald-400"></i>
-                    <span id="xmlCompanyDisplay">Empresa: --</span>
                 </div>
                 <!-- Carimbo de Data e Hora do XML -->
                 <div id="reportTimestamp" class="hidden bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 items-center gap-2">
@@ -131,6 +116,24 @@
 
         <!-- Dashboard Content -->
         <div id="dashboardContent" class="hidden space-y-6">
+
+            <!-- Detalhes do Relatório (Nome, Conta e Empresa) Acima dos KPIs -->
+            <div id="reportDetailsBar" class="hidden bg-cardBg border border-borderCol px-5 py-3.5 rounded-xl shadow-md flex flex-wrap items-center justify-between gap-4 text-xs">
+                <div class="flex items-center gap-6 flex-wrap">
+                    <div id="bodyNameContainer" class="hidden items-center gap-2 text-slate-300">
+                        <i class="fa-solid fa-user text-emerald-400"></i>
+                        <span id="bodyNameDisplay" class="font-medium text-white">Nome: --</span>
+                    </div>
+                    <div id="bodyAccountContainer" class="hidden items-center gap-2 text-slate-300">
+                        <i class="fa-solid id-card text-emerald-400"></i>
+                        <span id="bodyAccountDisplay" class="font-medium text-white">Conta: --</span>
+                    </div>
+                    <div id="bodyCompanyContainer" class="hidden items-center gap-2 text-slate-300">
+                        <i class="fa-solid fa-building text-emerald-400"></i>
+                        <span id="bodyCompanyDisplay" class="font-medium text-white">Empresa: --</span>
+                    </div>
+                </div>
+            </div>
 
             <!-- KPI Summary Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -311,12 +314,14 @@
         const dashboardContent = document.getElementById('dashboardContent');
         const fileInfo = document.getElementById('fileInfo');
         const fileNameDisplay = document.getElementById('fileNameDisplay');
-        const xmlNameInfo = document.getElementById('xmlNameInfo');
-        const xmlNameDisplay = document.getElementById('xmlNameDisplay');
-        const xmlAccountInfo = document.getElementById('xmlAccountInfo');
-        const xmlAccountDisplay = document.getElementById('xmlAccountDisplay');
-        const xmlCompanyInfo = document.getElementById('xmlCompanyInfo');
-        const xmlCompanyDisplay = document.getElementById('xmlCompanyDisplay');
+        
+        const reportDetailsBar = document.getElementById('reportDetailsBar');
+        const bodyNameContainer = document.getElementById('bodyNameContainer');
+        const bodyNameDisplay = document.getElementById('bodyNameDisplay');
+        const bodyAccountContainer = document.getElementById('bodyAccountContainer');
+        const bodyAccountDisplay = document.getElementById('bodyAccountDisplay');
+        const bodyCompanyContainer = document.getElementById('bodyCompanyContainer');
+        const bodyCompanyDisplay = document.getElementById('bodyCompanyDisplay');
         
         const xmlFileSelect = document.getElementById('xmlFileSelect');
         const loadSelectedBtn = document.getElementById('loadSelectedBtn');
@@ -343,9 +348,8 @@
             dashboardContent.classList.add('hidden');
             uploadSection.classList.remove('hidden');
             fileInfo.classList.add('hidden');
-            xmlNameInfo.classList.add('hidden');
-            xmlAccountInfo.classList.add('hidden');
-            xmlCompanyInfo.classList.add('hidden');
+            reportDetailsBar.classList.add('hidden');
+            reportDetailsBar.classList.remove('flex');
             backToSelectionBtn.classList.add('hidden');
             document.getElementById('reportTimestamp').classList.add('hidden');
         });
@@ -483,7 +487,6 @@
                     }
                 }
 
-                // Fallback por Regex na linha completa
                 let rowStr = row.map(c => String(c).trim()).join(' ');
                 let rowLower = rowStr.toLowerCase();
 
@@ -587,36 +590,47 @@
                 });
             }
 
-            // Atualiza os elementos visuais do cabeçalho
             fileNameDisplay.textContent = `Ficheiro: ${fileName}`;
             fileInfo.classList.remove('hidden');
             fileInfo.classList.add('flex');
 
+            let hasDetails = false;
             if (reportName) {
-                xmlNameDisplay.textContent = `Nome: ${reportName}`;
-                xmlNameInfo.classList.remove('hidden');
-                xmlNameInfo.classList.add('flex');
+                bodyNameDisplay.textContent = `Nome: ${reportName}`;
+                bodyNameContainer.classList.remove('hidden');
+                bodyNameContainer.classList.add('flex');
+                hasDetails = true;
             } else {
-                xmlNameInfo.classList.add('hidden');
-                xmlNameInfo.classList.remove('flex');
+                bodyNameContainer.classList.add('hidden');
+                bodyNameContainer.classList.remove('flex');
             }
 
             if (reportAccount) {
-                xmlAccountDisplay.textContent = `Conta: ${reportAccount}`;
-                xmlAccountInfo.classList.remove('hidden');
-                xmlAccountInfo.classList.add('flex');
+                bodyAccountDisplay.textContent = `Conta: ${reportAccount}`;
+                bodyAccountContainer.classList.remove('hidden');
+                bodyAccountContainer.classList.add('flex');
+                hasDetails = true;
             } else {
-                xmlAccountInfo.classList.add('hidden');
-                xmlAccountInfo.classList.remove('flex');
+                bodyAccountContainer.classList.add('hidden');
+                bodyAccountContainer.classList.remove('flex');
             }
 
             if (reportCompany) {
-                xmlCompanyDisplay.textContent = `Empresa: ${reportCompany}`;
-                xmlCompanyInfo.classList.remove('hidden');
-                xmlCompanyInfo.classList.add('flex');
+                bodyCompanyDisplay.textContent = `Empresa: ${reportCompany}`;
+                bodyCompanyContainer.classList.remove('hidden');
+                bodyCompanyContainer.classList.add('flex');
+                hasDetails = true;
             } else {
-                xmlCompanyInfo.classList.add('hidden');
-                xmlCompanyInfo.classList.remove('flex');
+                bodyCompanyContainer.classList.add('hidden');
+                bodyCompanyContainer.classList.remove('flex');
+            }
+
+            if (hasDetails) {
+                reportDetailsBar.classList.remove('hidden');
+                reportDetailsBar.classList.add('flex');
+            } else {
+                reportDetailsBar.classList.add('hidden');
+                reportDetailsBar.classList.remove('flex');
             }
 
             backToSelectionBtn.classList.remove('hidden');
