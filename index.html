@@ -35,13 +35,11 @@
 </head>
 <body class="bg-darkBg text-slate-100 min-h-screen flex flex-col">
 
-    <!-- Header[cite: 1] -->
+    <!-- Header com o Logotipo no Canto Superior Esquerdo -->
     <header class="bg-cardBg border-b border-borderCol py-4 px-6 shadow-md">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
-                <div class="bg-emerald-500/15 p-2.5 rounded-xl border border-emerald-500/30 text-emerald-400">
-                    <i class="fa-solid fa-chart-line text-xl"></i>
-                </div>
+                <img src="01.jpeg" alt="Logotipo" class="w-11 h-11 object-cover rounded-xl border border-emerald-500/30 shadow-md">
                 <div>
                     <h1 class="text-xl font-bold tracking-tight text-white">Gateway Tecnologia</h1>
                     <p class="text-xs text-slate-400">Análise Avançada de Relatórios (Diretório do Repositório)</p>
@@ -66,7 +64,7 @@
         </div>
     </header>
 
-    <!-- Main Container[cite: 1] -->
+    <!-- Main Container -->
     <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
 
         <!-- Seleção de Ficheiros / Carregamento -->
@@ -143,7 +141,7 @@
                 </div>
             </div>
 
-            <!-- Charts Section[cite: 1] -->
+            <!-- Charts Section -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Equity Curve Chart -->
                 <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md lg:col-span-2 flex flex-col">
@@ -175,7 +173,7 @@
                 </div>
             </div>
 
-            <!-- Novo Gráfico: Desempenho por Horário (Acertos vs Erros) -->
+            <!-- Gráfico de Desempenho por Horário (Acertos vs Erros) -->
             <div class="bg-cardBg border border-borderCol p-5 rounded-xl shadow-md flex flex-col">
                 <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
                     <i class="fa-solid fa-clock-rotate-left text-amber-400"></i> Desempenho por Horário (Acertos vs Erros)
@@ -195,7 +193,7 @@
                 </div>
             </div>
 
-            <!-- Transactions Table with Granular Column Filters[cite: 1] -->
+            <!-- Transactions Table with Granular Column Filters -->
             <div class="bg-cardBg border border-borderCol rounded-xl shadow-md overflow-hidden">
                 <div class="p-5 border-b border-borderCol flex flex-col gap-4">
                     <div class="flex justify-between items-center">
@@ -247,7 +245,7 @@
 
     </main>
 
-    <!-- Footer[cite: 1] -->
+    <!-- Footer -->
     <footer class="bg-cardBg border-t border-borderCol py-4 text-center text-xs text-slate-500 mt-auto">
         Gateway Tecnologia &copy; 2026 - Análise Automatizada de Relatórios
     </footer>
@@ -669,192 +667,4 @@
                     datasets: [{
                         data: [winsCount, lossesCount],
                         backgroundColor: ['#10b981', '#f43f5e'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { color: '#cbd5e1', font: { size: 11 } }
-                        }
-                    }
-                }
-            });
-
-            // 3. Gráfico de Drawdown
-            let peak = 0;
-            let runCumulative = 0;
-            const drawdownData = trades.map(t => {
-                runCumulative += t.profit;
-                if (runCumulative > peak) {
-                    peak = runCumulative;
-                }
-                return runCumulative - peak;
-            });
-
-            const ctxDrawdown = document.getElementById('drawdownChart').getContext('2d');
-            if (drawdownChartInstance) drawdownChartInstance.destroy();
-
-            drawdownChartInstance = new Chart(ctxDrawdown, {
-                type: 'line',
-                data: {
-                    labels: trades.map(t => t.time || ''),
-                    datasets: [{
-                        label: 'Drawdown (R$)',
-                        data: drawdownData,
-                        borderColor: '#f43f5e',
-                        backgroundColor: 'rgba(244, 63, 94, 0.15)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.2,
-                        pointRadius: 2,
-                        pointBackgroundColor: '#f43f5e'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { 
-                            grid: { color: '#334155' }, 
-                            ticks: { color: '#94a3b8', maxTicksLimit: 12 } 
-                        },
-                        y: { 
-                            grid: { color: '#334155' }, 
-                            ticks: { color: '#94a3b8' } 
-                        }
-                    }
-                }
-            });
-
-            // 4. Gráfico de Desempenho por Horário (Acertos vs Erros)
-            const hourlyStats = {};
-            trades.forEach(t => {
-                // Agrupa pelo horário (ex: "10:15" ou hora inteira "10h")
-                let hKey = t.time || 'Outros';
-                if (!hourlyStats[hKey]) {
-                    hourlyStats[hKey] = { wins: 0, losses: 0 };
-                }
-                if (t.profit > 0) {
-                    hourlyStats[hKey].wins++;
-                } else {
-                    hourlyStats[hKey].losses++;
-                }
-            });
-
-            const hourLabels = Object.keys(hourlyStats);
-            const winsByHour = hourLabels.map(h => hourlyStats[h].wins);
-            const lossesByHour = hourLabels.map(h => hourlyStats[h].losses);
-
-            const ctxHourly = document.getElementById('hourlyPerformanceChart').getContext('2d');
-            if (hourlyPerformanceChartInstance) hourlyPerformanceChartInstance.destroy();
-
-            hourlyPerformanceChartInstance = new Chart(ctxHourly, {
-                type: 'bar',
-                data: {
-                    labels: hourLabels,
-                    datasets: [
-                        {
-                            label: 'Acertos (Gains)',
-                            data: winsByHour,
-                            backgroundColor: '#10b981',
-                            borderRadius: 4
-                        },
-                        {
-                            label: 'Erros (Losses)',
-                            data: lossesByHour,
-                            backgroundColor: '#f43f5e',
-                            borderRadius: 4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: { color: '#cbd5e1', font: { size: 11 } }
-                        }
-                    },
-                    scales: {
-                        x: { 
-                            grid: { color: '#334155' }, 
-                            ticks: { color: '#94a3b8', maxTicksLimit: 15 } 
-                        },
-                        y: { 
-                            grid: { color: '#334155' }, 
-                            ticks: { color: '#94a3b8', precision: 0 } 
-                        }
-                    }
-                }
-            });
-
-            // 5. Gráfico de Volume com Cores Dinâmicas e Valores no Topo
-            const volumeData = trades.map(t => parseFloat(t.volume) || 0);
-            const volumeColors = trades.map(t => t.profit > 0 ? '#10b981' : '#f43f5e');
-            const volumeBgColors = trades.map(t => t.profit > 0 ? 'rgba(16, 185, 129, 0.6)' : 'rgba(244, 63, 94, 0.6)');
-            const maxVol = Math.max(...volumeData, 1);
-
-            const ctxVolume = document.getElementById('volumeChart').getContext('2d');
-            if (volumeChartInstance) volumeChartInstance.destroy();
-
-            volumeChartInstance = new Chart(ctxVolume, {
-                type: 'bar',
-                data: {
-                    labels: trades.map(t => t.time || ''),
-                    datasets: [{
-                        label: 'Volume (Contratos)',
-                        data: volumeData,
-                        backgroundColor: volumeBgColors,
-                        borderColor: volumeColors,
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { 
-                            grid: { color: '#334155' }, 
-                            ticks: { color: '#94a3b8', maxTicksLimit: 12 } 
-                        },
-                        y: { 
-                            grid: { color: '#334155' }, 
-                            ticks: { color: '#94a3b8', precision: 0 },
-                            suggestedMax: maxVol * 1.3
-                        }
-                    }
-                },
-                plugins: [{
-                    id: 'topBarLabels',
-                    afterDatasetsDraw(chart) {
-                        const ctx = chart.ctx;
-                        chart.data.datasets.forEach((dataset, i) => {
-                            const meta = chart.getDatasetMeta(i);
-                            meta.data.forEach((bar, index) => {
-                                const profit = trades[index].profit;
-                                const formattedProfit = (profit >= 0 ? '+R$ ' : '-R$ ') + Math.abs(profit).toLocaleString('pt-BR', {minimumFractionDigits: 2});
-                                
-                                ctx.save();
-                                ctx.fillStyle = profit >= 0 ? '#10b981' : '#f43f5e';
-                                ctx.font = 'bold 9px Inter, sans-serif';
-                                ctx.textAlign = 'center';
-                                ctx.textBaseline = 'bottom';
-                                ctx.fillText(formattedProfit, bar.x, bar.y - 6);
-                                ctx.restore();
-                            });
-                        });
-                    }
-                }]
-            });
-        }
-    </script>
-</body>
-</html>
+                        border
