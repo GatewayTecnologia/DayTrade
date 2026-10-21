@@ -452,44 +452,59 @@
             reportAccount = '';
             reportCompany = '';
 
-            // Varredura das primeiras linhas para extrair metadados do cabeçalho
-            for (let i = 0; i < Math.min(rows.length, 25); i++) {
+            // Varredura flexível das primeiras 30 linhas para extrair metadados do cabeçalho
+            for (let i = 0; i < Math.min(rows.length, 30); i++) {
                 const row = rows[i];
                 if (!row || row.length === 0) continue;
                 
-                let rowJoined = row.map(c => String(c).trim()).join(' | ');
-                let rowStrLower = rowJoined.toLowerCase();
+                for (let j = 0; j < row.length; j++) {
+                    let cell = String(row[j] || '').trim();
+                    let cellLower = cell.toLowerCase();
+                    let nextCell = String(row[j + 1] || '').trim();
 
-                // Procura por Data/Hora de Geração
-                if (!reportGeneratedTime && (rowStrLower.includes('gerado') || rowStrLower.includes('data') || rowStrLower.includes('date') || rowStrLower.includes('relatório'))) {
-                    for (let cell of row) {
-                        let cellStr = String(cell).trim();
-                        if (/\d{4}[./-]\d{2}[./-]\d{2}/.test(cellStr) || /\d{2}[./-]\d{2}[./-]\d{4}/.test(cellStr)) {
-                            reportGeneratedTime = cellStr;
-                            break;
+                    if ((cellLower.includes('nome') || cellLower.includes('name') || cellLower.includes('cliente')) && !reportName) {
+                        if (nextCell) reportName = nextCell;
+                        else if (cell.includes(':')) reportName = cell.split(':')[1].trim();
+                    }
+                    if ((cellLower.includes('conta') || cellLower.includes('account') || cellLower === 'login') && !reportAccount) {
+                        if (nextCell) reportAccount = nextCell;
+                        else if (cell.includes(':')) reportAccount = cell.split(':')[1].trim();
+                    }
+                    if ((cellLower.includes('empresa') || cellLower.includes('company') || cellLower.includes('corretora')) && !reportCompany) {
+                        if (nextCell) reportCompany = nextCell;
+                        else if (cell.includes(':')) reportCompany = cell.split(':')[1].trim();
+                    }
+                    if ((cellLower.includes('gerado') || cellLower.includes('data') || cellLower.includes('date')) && !reportGeneratedTime) {
+                        if (nextCell && /\d{4}|\d{2}[./-]\d{2}/.test(nextCell)) {
+                            reportGeneratedTime = nextCell;
+                        } else if (cell.includes(':') && cell.length > 10) {
+                            reportGeneratedTime = cell.includes(': ') ? cell.split(': ').slice(1).join(': ') : cell;
                         }
                     }
                 }
 
-                // Procura por Nome / Account / Company nas linhas iniciais
-                for (let j = 0; j < row.length; j++) {
-                    let val = String(row[j] || '').trim();
-                    let valLower = val.toLowerCase();
-                    let nextVal = String(row[j + 1] || '').trim();
+                // Fallback por Regex na linha completa
+                let rowStr = row.map(c => String(c).trim()).join(' ');
+                let rowLower = rowStr.toLowerCase();
 
-                    if ((valLower === 'nome:' || valLower === 'name:' || valLower === 'cliente:') && nextVal) {
-                        reportName = nextVal;
-                    }
-                    if ((valLower === 'conta:' || valLower === 'account:' || valLower === 'login:') && nextVal) {
-                        reportAccount = nextVal;
-                    }
-                    if ((valLower === 'empresa:' || valLower === 'company:' || valLower === 'broker:') && nextVal) {
-                        reportCompany = nextVal;
-                    }
+                if (!reportName && (rowLower.includes('nome:') || rowLower.includes('name:'))) {
+                    let match = rowStr.match(/(?:nome|name)[:]\s*([^|]+)/i);
+                    if (match && match[1]) reportName = match[1].trim();
+                }
+                if (!reportAccount && (rowLower.includes('conta:') || rowLower.includes('account:') || rowLower.includes('login:'))) {
+                    let match = rowStr.match(/(?:conta|account|login)[:]\s*([^|]+)/i);
+                    if (match && match[1]) reportAccount = match[1].trim();
+                }
+                if (!reportCompany && (rowLower.includes('empresa:') || rowLower.includes('company:'))) {
+                    let match = rowStr.match(/(?:empresa|company)[:]\s*([^|]+)/i);
+                    if (match && match[1]) reportCompany = match[1].trim();
+                }
+                if (!reportGeneratedTime && /\d{4}[./-]\d{2}[./-]\d{2}/.test(rowStr)) {
+                    let match = rowStr.match(/\d{4}[./-]\d{2}[./-]\d{2}[^\s]*/);
+                    if (match) reportGeneratedTime = match[0];
                 }
             }
 
-            // Fallback para Data/Hora caso não venha explícita no cabeçalho
             if (!reportGeneratedTime) {
                 reportGeneratedTime = new Date().toLocaleString('pt-PT');
             }
@@ -581,16 +596,27 @@
                 xmlNameDisplay.textContent = `Nome: ${reportName}`;
                 xmlNameInfo.classList.remove('hidden');
                 xmlNameInfo.classList.add('flex');
+            } else {
+                xmlNameInfo.classList.add('hidden');
+                xmlNameInfo.classList.remove('flex');
             }
+
             if (reportAccount) {
                 xmlAccountDisplay.textContent = `Conta: ${reportAccount}`;
                 xmlAccountInfo.classList.remove('hidden');
                 xmlAccountInfo.classList.add('flex');
+            } else {
+                xmlAccountInfo.classList.add('hidden');
+                xmlAccountInfo.classList.remove('flex');
             }
+
             if (reportCompany) {
                 xmlCompanyDisplay.textContent = `Empresa: ${reportCompany}`;
                 xmlCompanyInfo.classList.remove('hidden');
                 xmlCompanyInfo.classList.add('flex');
+            } else {
+                xmlCompanyInfo.classList.add('hidden');
+                xmlCompanyInfo.classList.remove('flex');
             }
 
             backToSelectionBtn.classList.remove('hidden');
