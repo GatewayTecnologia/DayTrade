@@ -285,6 +285,16 @@
 
         </div>
 
+        <!-- Seção de 3 GIFs Aleatórios do Mercado Financeiro (Acima do Rodapé) -->
+        <section class="bg-cardBg border border-borderCol rounded-xl p-5 shadow-md">
+            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 text-center flex items-center justify-center gap-2">
+                <i class="fa-solid fa-fire text-amber-400"></i> Destaques do Mercado Financeiro
+            </h3>
+            <div id="financialGifsContainer" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <!-- GIFs aleatórios injetados dinamicamente via JS -->
+            </div>
+        </section>
+
     </main>
 
     <!-- Botão Flutuante de Suporte por WhatsApp -->
@@ -317,6 +327,36 @@
         let reportAccount = '';
         let reportCompany = '';
         let directoryFilesMap = new Map();
+
+        // Lista de GIFs Selecionados do Mercado Financeiro
+        const financialGifsPool = [
+            { url: "https://media.giphy.com/media/YnkMc31CX0o8M/giphy.gif", title: "Wall Street Trading" },
+            { url: "https://media.giphy.com/media/JtBZm3Getg3dqxK0zP/giphy.gif", title: "Bull Market Surge" },
+            { url: "https://media.giphy.com/media/l3vhJwvhfRGA9fK0w/giphy.gif", title: "Stock Charts & Data" },
+            { url: "https://media.giphy.com/media/67ThRZlYBVOMFvkhD8/giphy.gif", title: "Profits & Growth" },
+            { url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOG4xcnNmc3lhOW9sNmRqd3RhMXo5OHBvZXV0aTRldXV5aDhrNWVpYSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/d3mlE7uhX8KFgEmY/giphy.gif", title: "Trading Strategy" },
+            { url: "https://media.giphy.com/media/XG2F24xEfzMRO/giphy.gif", title: "Financial Markets" }
+        ];
+
+        function loadRandomFinancialGifs() {
+            const container = document.getElementById('financialGifsContainer');
+            if (!container) return;
+            
+            // Embaralhar e pegar 3 GIFs aleatórios
+            const shuffled = [...financialGifsPool].sort(() => 0.5 - Math.random());
+            const selectedGifs = shuffled.slice(0, 3);
+
+            container.innerHTML = selectedGifs.map(gif => `
+                <div class="relative overflow-hidden rounded-xl border border-slate-700 bg-slate-900 group shadow-md hover:border-emerald-500/50 transition">
+                    <img src="${gif.url}" alt="${gif.title}" class="w-full h-36 object-cover transition duration-300 transform group-hover:scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-2.5">
+                        <span class="text-[11px] font-medium text-slate-200 flex items-center gap-1.5">
+                            <i class="fa-solid fa-chart-line text-emerald-400"></i> ${gif.title}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
 
         const uploadSection = document.getElementById('uploadSection');
         const dashboardContent = document.getElementById('dashboardContent');
@@ -369,6 +409,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             fetchDirectoryFiles();
+            loadRandomFinancialGifs();
         });
 
         async function fetchDirectoryFiles() {
@@ -725,6 +766,7 @@
 
             applyColumnFilters();
             renderCharts(allTrades);
+            loadRandomFinancialGifs();
         }
 
         function populateTable(trades) {
